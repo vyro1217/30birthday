@@ -10,8 +10,11 @@ type BirthdayContentConfig = Omit<BirthdayContent, 'opening' | 'story'> & {
     before: BirthdayContent['story']['before'];
     us: Omit<BirthdayContent['story']['us'], 'image'> & { imagePath: string };
     memories: Array<Omit<BirthdayContent['story']['memories'][number], 'image'> & { imagePath: string }>;
-    after: BirthdayContent['story']['after'];
+    after: Omit<BirthdayContent['story']['after'], 'image'> & { imagePath?: string };
+    thirtySoft: BirthdayContent['story']['thirtySoft'];
+    thirtyRace: BirthdayContent['story']['thirtyRace'];
   };
+  closing: Omit<BirthdayContent['closing'], 'image'> & { imagePath?: string };
 };
 
 export const birthdayCardContentConfig: BirthdayContentConfig = {
@@ -39,30 +42,38 @@ export const birthdayCardContentConfig: BirthdayContentConfig = {
   },
   opening: {
     introText:
-      'I made this for you.\nJust a small birthday card, with a few moments I wanted to keep for us.',
-    cardEyebrow: 'A small card for you',
+      'Rita, this is for your 30th birthday.\nI made you a small card with a few moments I never want to forget about us.',
+    cardEyebrow: 'For Rita, on your 30th',
     cardTitle: 'Happy 30th Birthday',
     giftPrompt: {
-      hint: 'Tap the gift to open it',
+      hint: 'Tap to open the card I made for you',
       transition: 'Just one more moment.\nI want to show you something.',
+      bridgeText: 'The lid is open now.\nThe first note is already waiting just inside.',
+    },
+    revealCard: {
+      eyebrow: 'A note inside',
+      title: 'Before anything else',
+      body:
+        'If this felt small from the outside, that was on purpose.\nI wanted it to feel like something you open slowly.\nSomething made just for you.\nHappy 30th, baby.',
+      confirmLabel: 'Pull to open',
     },
     photoLockedEyebrow: 'My Rita',
-    photoLockedText: 'A little birthday card I made for you',
+    photoLockedText: 'Your birthday card is waiting inside.',
     photoUnlockedEyebrow: 'Only yours',
-    photoUnlockedText: 'Kept close, for you.',
+    photoUnlockedText: 'Made carefully, only for you.',
     faceIdIdleEyebrow: 'Face ID',
-    faceIdIdleText: 'Look here to open your card',
+    faceIdIdleText: 'Tap here and let me open your birthday card',
     faceIdScanningEyebrow: 'Scanning',
-    faceIdScanningText: 'Gently opening your card',
+    faceIdScanningText: 'Gently opening something I made for you',
     faceIdUnlockedEyebrow: 'Welcome, Rita',
-    faceIdUnlockedText: 'Opening your card',
+    faceIdUnlockedText: 'Your card is opening',
     featuredPhotoPath: 'photos/rita.jpg',
     featuredPhotoAlt: 'A portrait of Rita',
   },
   story: {
     before: {
       text:
-        'Thirty feels special to me because it holds so much of who you already are.\nNot in a dramatic way, just in the real way.\nYou have become someone warm, thoughtful, steady, and quietly strong.',
+        'Thirty feels special to me because it feels like such a true age for you.\nNot because everything is suddenly different, but because so much of who you are has become clearer.\nYou feel warmer, steadier, and more sure of yourself now.\nAnd it is beautiful to watch.',
     },
     us: {
       imagePath: 'photos/photo-in-mrt.jpg',
@@ -75,7 +86,7 @@ export const birthdayCardContentConfig: BirthdayContentConfig = {
         id: 'memory-1',
         imagePath: "photos/valentine's-day.jpg",
         eyebrow: 'A warm night',
-        pauseMs: 4600,
+        pauseMs: 5200,
         imageAlt: 'A dinner date photo of us smiling together',
         caption:
           'I still love photos like this because they feel simple and happy.\nNo performance, no big scene.\nJust you, me, good food, and that feeling of wanting the night to last a little longer.',
@@ -84,7 +95,7 @@ export const birthdayCardContentConfig: BirthdayContentConfig = {
         id: 'memory-2',
         imagePath: 'photos/photo-with-traditional-cloths.jpg',
         eyebrow: 'One I really love',
-        pauseMs: 5600,
+        pauseMs: 6400,
         imageAlt: 'A photo of us dressed in traditional clothes together',
         caption:
           'This one always makes me smile.\nWe look dressed up, but what I remember most is how easy it felt to share that day with you.\nThat is something I keep coming back to with us.\nEven special moments still feel comfortable when I am with you.',
@@ -93,27 +104,59 @@ export const birthdayCardContentConfig: BirthdayContentConfig = {
         id: 'memory-3',
         imagePath: 'photos/run-the-firsst-half-marathon.jpg',
         eyebrow: 'And this one too',
-        pauseMs: 6600,
+        pauseMs: 7200,
         imageAlt: 'A race-day photo of us after the half marathon',
         caption:
           'I wanted to keep this one in here because it reminds me that we are not only good at the soft moments.\nWe are also good at showing up, pushing through, and cheering each other on.\nI feel proud of you, and honestly really lucky that I get to be on your side.',
       },
+      {
+        id: 'memory-4',
+        imagePath: 'photos/run-together.jpg',
+        eyebrow: 'Still us',
+        pauseMs: 6800,
+        imageAlt: 'A photo of us running together',
+        caption:
+          'I love this one because it feels like us in motion.\nNot trying too hard, not posing for anything.\nJust moving through something together and making it feel light.',
+      },
+      {
+        id: 'memory-5',
+        imagePath: 'photos/music-concert.jpg',
+        eyebrow: 'One more page',
+        pauseMs: 7000,
+        imageAlt: 'A photo of us at a concert together',
+        caption:
+          'And I wanted one more page that feels a little louder.\nA night out, a crowd around us, and still somehow the part I remember most is just being there with you.',
+      },
     ],
     after: {
+      imagePath: 'photos/early-age.jpg',
+      imageAlt: 'An early memory photo of Rita',
       text:
-        'That is really what I wanted this little gift to hold.\nNot a big speech.\nJust a few real moments, and the truth that loving you has become such an important part of my life.',
+        'That is really what I wanted this little gift to hold.\nNot a big speech.\nJust a few real moments, and that quiet feeling I keep having with you.\nThat being beside you has become one of the most important parts of my life.',
+    },
+    thirtySoft: {
+      text:
+        'And for thirty, I just wanted to say this in the simplest way.\nYou are still my baby.\nStill the same clingy girl who wants hugs, gets emotional so easily, and makes me want to keep you close all the time.\nThat soft side of you still feels so completely you.\nAnd honestly, I still love it just as much as ever.',
+    },
+    thirtyRace: {
+      text:
+        'But this year, I also got to see another side of you more clearly.\nWatching you train for the Tainan Ancient Capital Half Marathon, seeing how diligent you were, and then seeing you reach the goal you set for yourself made me really proud of you.\nIt felt very you.\nSoft and affectionate, but also serious when something matters to you.\nThat is what makes thirty feel so right on you to me.\nYou are still the same baby I want to hold.\nI just get to love a steadier and stronger version of you now too.',
     },
   },
   blessing: {
     title: 'Happy 30th Birthday',
-    subtitle: 'A small note for your birthday',
+    subtitle: 'For the woman turning thirty, and becoming even more herself',
     reflection:
-      'You make life feel calmer, softer, and more meaningful.\n\nI admire how thoughtful you are, how much care you carry, and how naturally you make the people around you feel at ease.\n\nBeing with you has changed my life in quiet ways that matter a lot to me.',
+      'You make life feel calmer, softer, and more meaningful.\n\nI admire how thoughtful you are, how much care you carry, and how naturally you make the people around you feel at ease.\n\nBut this year, more than ever, I also admire your steadiness.\nThe way you are growing into yourself without needing to be loud about it.\nThat kind of quiet confidence is one of the things I love most about you.',
     wish:
       'I hope your thirties bring you more confidence, more peace, and more of the life that truly fits you.\n\nI hope there are many more moments that make you proud of yourself.\n\nAnd selfishly, I hope I get to stay beside you for a lot more of them.',
   },
   closing: {
-    text: 'Happy 30th birthday, baby.\nI love you.\nLove, always.',
+    text: 'Happy 30th birthday, baby.\nI love you.\nAnd if you are done reading this, come let me hold you for a second.\nLove, always.',
+    hint: 'Close the box gently when you are ready.',
+    doneText: 'Everything is back in its place.',
+    imagePath: 'photos/early-age.jpg',
+    imageAlt: 'An early memory photo of Rita',
   },
 };
 
@@ -137,6 +180,18 @@ function createBirthdayContent(resolveAssetPath: (path: string) => string): Birt
         ...memoryMoment,
         image: resolveAssetPath(memoryMoment.imagePath),
       })),
+      after: {
+        ...birthdayCardContentConfig.story.after,
+        image: birthdayCardContentConfig.story.after.imagePath
+          ? resolveAssetPath(birthdayCardContentConfig.story.after.imagePath)
+          : undefined,
+      },
+    },
+    closing: {
+      ...birthdayCardContentConfig.closing,
+      image: birthdayCardContentConfig.closing.imagePath
+        ? resolveAssetPath(birthdayCardContentConfig.closing.imagePath)
+        : undefined,
     },
   };
 }

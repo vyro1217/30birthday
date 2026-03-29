@@ -2,22 +2,31 @@ export type BirthdayStep =
   | 'intro'
   | 'ready'
   | 'opening'
+  | 'opening-bridge'
+  | 'gift-ribbon'
   | 'cosmic-core'
   | 'timeline-expand'
+  | 'story-gift'
   | 'node-before'
   | 'node-us'
   | 'memory-1'
   | 'memory-2'
   | 'memory-3'
+  | 'memory-4'
+  | 'memory-5'
   | 'node-now'
+  | 'node-thirty-soft'
+  | 'node-thirty-race'
   | 'title'
   | 'message'
   | 'message2'
-  | 'final';
+  | 'final'
+  | 'closing-gift';
 
 export interface BirthdayGiftPromptContent {
   hint: string;
   transition?: string;
+  bridgeText?: string;
 }
 
 export interface BirthdayStorySection {
@@ -45,6 +54,10 @@ export interface BirthdayBlessingSection {
 
 export interface BirthdayClosingSection {
   text: string;
+  hint?: string;
+  doneText?: string;
+  image?: string;
+  imageAlt?: string;
 }
 
 export interface BirthdayBackgroundAudio {
@@ -78,6 +91,12 @@ export interface BirthdayOpeningContent {
   cardEyebrow: string;
   cardTitle: string;
   giftPrompt: BirthdayGiftPromptContent;
+  revealCard: {
+    eyebrow: string;
+    title: string;
+    body: string;
+    confirmLabel: string;
+  };
   photoLockedEyebrow: string;
   photoLockedText: string;
   photoUnlockedEyebrow: string;
@@ -98,7 +117,9 @@ export interface BirthdayStoryContent {
   before: BirthdayStorySection;
   us: BirthdayPhotoSection & { text: string };
   memories: BirthdayMemoryMoment[];
-  after: BirthdayStorySection;
+  after: BirthdayStorySection & BirthdayPhotoSection;
+  thirtySoft: BirthdayStorySection;
+  thirtyRace: BirthdayStorySection;
 }
 
 export interface BirthdayContent {

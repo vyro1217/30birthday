@@ -3,34 +3,37 @@ import { BirthdayStep } from '../types/birthday';
 
 const AUTO_ADVANCE_DELAY: Partial<Record<BirthdayStep, number>> = {
   intro: 2200,
-  opening: 2200,
+  'opening-bridge': 980,
   'cosmic-core': 1200,
   'timeline-expand': 1400,
   'node-before': 6200,
-  'node-us': 5600,
   'memory-1': 4600,
-  'memory-2': 5200,
-  'memory-3': 6200,
   'node-now': 6000,
-  title: 3600,
 } as const;
 
 const DEFAULT_STEPS: BirthdayStep[] = [
   'intro', 
   'ready', 
   'opening', 
+  'opening-bridge',
   'cosmic-core', 
   'timeline-expand', 
+  'story-gift',
   'node-before', 
   'node-us', 
   'memory-1',
   'memory-2',
   'memory-3',
+  'memory-4',
+  'memory-5',
   'node-now', 
+  'node-thirty-soft',
+  'node-thirty-race',
   'title', 
   'message', 
   'message2',
-  'final'
+  'final',
+  'closing-gift'
 ];
 
 export function useBirthdayFlow(
@@ -65,6 +68,16 @@ export function useBirthdayFlow(
       const next = steps[currentIndex + 1];
       setStep(next);
       setAutoAdvanceBlockedForStep(next);
+      clearTimers();
+    }
+  }, [step, clearTimers, steps]);
+
+  const continueStep = useCallback(() => {
+    const currentIndex = steps.indexOf(step);
+    if (currentIndex < steps.length - 1) {
+      const next = steps[currentIndex + 1];
+      setAutoAdvanceBlockedForStep(null);
+      setStep(next);
       clearTimers();
     }
   }, [step, clearTimers, steps]);
@@ -116,7 +129,8 @@ export function useBirthdayFlow(
   return useMemo(() => ({
     step,
     nextStep,
+    continueStep,
     prevStep,
     openGift,
-  }), [step, nextStep, prevStep, openGift]);
+  }), [step, nextStep, continueStep, prevStep, openGift]);
 }
