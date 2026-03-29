@@ -1,0 +1,16 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="120" fill="#05050A"/>
+  <rect x="36" y="36" width="440" height="440" rx="96" fill="url(#paint0_radial)" stroke="rgba(255,255,255,0.10)"/>
+  <rect x="176" y="152" width="160" height="128" rx="26" fill="rgba(255,255,255,0.03)" stroke="rgba(197,160,89,0.35)"/>
+  <rect x="206" y="122" width="100" height="52" rx="18" fill="rgba(255,255,255,0.05)" stroke="rgba(197,160,89,0.45)"/>
+  <rect x="207" y="176" width="98" height="2" fill="rgba(197,160,89,0.45)"/>
+  <path d="M174 334C191.5 334 205.5 348 205.5 365.5C205.5 383 191.5 397 174 397C156.5 397 142.5 383 142.5 365.5C142.5 348 156.5 334 174 334Z" fill="#C5A059" fill-opacity="0.16"/>
+  <path d="M338 334C355.5 334 369.5 348 369.5 365.5C369.5 383 355.5 397 338 397C320.5 397 306.5 383 306.5 365.5C306.5 348 320.5 334 338 334Z" fill="#C5A059" fill-opacity="0.16"/>
+  <text x="256" y="365" text-anchor="middle" fill="#F8F4EE" font-family="Georgia, serif" font-size="46" font-style="italic">30</text>
+  <defs>
+    <radialGradient id="paint0_radial" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(150 122) rotate(29.5) scale(365 302)">
+      <stop stop-color="#1A1625"/>
+      <stop offset="1" stop-color="#05050A"/>
+    </radialGradient>
+  </defs>
+</svg>

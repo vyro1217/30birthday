@@ -1,4 +1,5 @@
 import { BirthdayContent } from '../types/birthday';
+import { getPublicAssetPath } from '../lib/assetPaths';
 
 export const birthdayContent: BirthdayContent = {
   ui: {
@@ -15,7 +16,7 @@ export const birthdayContent: BirthdayContent = {
     title: 'Soft background music',
   },
   intro: {
-    message: 'I made this for you.\nA small birthday card, and a few moments I wanted to keep close.',
+    message: 'I made this for you.\nJust a small birthday card, with a few moments I wanted to keep for us.',
   },
   giftPrompt: {
     hint: 'Tap the gift to open it',
@@ -26,7 +27,7 @@ export const birthdayContent: BirthdayContent = {
       'Thirty feels special to me because it holds so much of who you already are.\nNot in a dramatic way, just in the real way.\nYou have become someone warm, thoughtful, steady, and quietly strong.',
   },
   us: {
-    image: '/photos/photo-in-mrt.jpg',
+    image: getPublicAssetPath('photos/photo-in-mrt.jpg'),
     imageAlt: 'A close photo of us together on the MRT',
     text:
       'I love that so much of us looks like this.\nJust being beside each other, going somewhere ordinary, and somehow it already feels like one of the best parts of my life.',
@@ -34,7 +35,7 @@ export const birthdayContent: BirthdayContent = {
   memorySequence: [
     {
       id: 'memory-1',
-      image: "/photos/valentine's-day.jpg",
+      image: getPublicAssetPath("photos/valentine's-day.jpg"),
       eyebrow: 'A warm night',
       pauseMs: 4600,
       imageAlt: 'A dinner date photo of us smiling together',
@@ -43,7 +44,7 @@ export const birthdayContent: BirthdayContent = {
     },
     {
       id: 'memory-2',
-      image: '/photos/photo-with-traditional-cloths.jpg',
+      image: getPublicAssetPath('photos/photo-with-traditional-cloths.jpg'),
       eyebrow: 'One I really love',
       pauseMs: 5600,
       imageAlt: 'A photo of us dressed in traditional clothes together',
@@ -52,7 +53,7 @@ export const birthdayContent: BirthdayContent = {
     },
     {
       id: 'memory-3',
-      image: '/photos/run-the-firsst-half-marathon.jpg',
+      image: getPublicAssetPath('photos/run-the-firsst-half-marathon.jpg'),
       eyebrow: 'And this one too',
       pauseMs: 6600,
       imageAlt: 'A race-day photo of us after the half marathon',
