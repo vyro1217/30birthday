@@ -7,6 +7,8 @@ interface MemoryNoteProps {
   imageAlt?: string;
   eyebrow?: string;
   align?: 'left' | 'right';
+  imageLoading?: 'eager' | 'lazy';
+  imageFetchPriority?: 'high' | 'low' | 'auto';
 }
 
 export const MemoryNote = memo(function MemoryNote({
@@ -15,6 +17,8 @@ export const MemoryNote = memo(function MemoryNote({
   imageAlt,
   eyebrow,
   align = 'left',
+  imageLoading = 'lazy',
+  imageFetchPriority = 'auto',
 }: MemoryNoteProps) {
   const isRightAligned = align === 'right';
   const [isImageLoaded, setIsImageLoaded] = useState(!image);
@@ -30,14 +34,14 @@ export const MemoryNote = memo(function MemoryNote({
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -30 }}
-      transition={{ duration: 1.7, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
       className={`flex w-[min(94%,440px)] flex-col gap-8 sm:gap-10 ${isRightAligned ? 'items-end text-right' : 'items-start text-left'}`}
     >
       {image && !hasImageError && (
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.55, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           className="relative w-full overflow-hidden rounded-[20px] sm:rounded-[24px]"
         >
           {/* Refined Frame */}
@@ -60,7 +64,10 @@ export const MemoryNote = memo(function MemoryNote({
             }}
             className="aspect-[4/5] w-full rounded-[20px] sm:rounded-[24px] object-cover shadow-[0_32px_80px_rgba(0,0,0,0.6)] border border-white/10"
             referrerPolicy="no-referrer"
-            loading="eager"
+            loading={imageLoading}
+            fetchPriority={imageFetchPriority}
+            decoding="async"
+            sizes="(max-width: 640px) 88vw, 440px"
           />
         </motion.div>
       )}
@@ -68,7 +75,7 @@ export const MemoryNote = memo(function MemoryNote({
         <motion.div
           initial={{ opacity: 0, x: isRightAligned ? 10 : -10 }}
           animate={{ opacity: 0.9, x: 0 }}
-          transition={{ delay: 0.35, duration: 1.25 }}
+          transition={{ delay: 0.14, duration: 0.65 }}
         >
           {eyebrow && (
             <p

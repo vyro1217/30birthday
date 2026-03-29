@@ -36,8 +36,15 @@ const DEFAULT_STEPS: BirthdayStep[] = [
 export function useBirthdayFlow(
   steps: BirthdayStep[] = DEFAULT_STEPS,
   autoAdvanceDelayOverrides: Partial<Record<BirthdayStep, number>> = {},
+  initialStep?: BirthdayStep,
 ) {
-  const [step, setStep] = useState<BirthdayStep>('intro');
+  const [step, setStep] = useState<BirthdayStep>(() => {
+    if (initialStep && steps.includes(initialStep)) {
+      return initialStep;
+    }
+
+    return steps[0] ?? 'intro';
+  });
   const [autoAdvanceBlockedForStep, setAutoAdvanceBlockedForStep] = useState<BirthdayStep | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoAdvanceDelay = useMemo(

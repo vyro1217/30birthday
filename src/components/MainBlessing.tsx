@@ -13,7 +13,7 @@ export const MainBlessing = memo(function MainBlessing({ message }: MainBlessing
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -30 }}
-      transition={{ duration: 1.3, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
       className="relative w-[min(94%,560px)] overflow-hidden rounded-[36px] border border-white/8 bg-white/[0.025] p-8 shadow-[0_48px_120px_rgba(0,0,0,0.52)] backdrop-blur-[28px] sm:rounded-[44px] sm:p-14"
     >
       {/* Refined Luxury Borders & Accents */}
@@ -34,8 +34,8 @@ export const MainBlessing = memo(function MainBlessing({ message }: MainBlessing
             key={idx}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 + idx * 0.24, duration: 1.1 }}
-            className={`m-0 text-[clamp(1rem,4.4vw,1.12rem)] leading-[1.95] sm:leading-[2.1] text-[#F8F4EE]/92 text-left whitespace-pre-line font-light tracking-[0.025em] ${idx === 0 ? 'mb-2 font-serif italic text-[#E7D3AB] text-[clamp(1.08rem,4.8vw,1.24rem)]' : ''} break-words [overflow-wrap:anywhere]`}
+            transition={{ delay: 0.12 + idx * 0.1, duration: 0.65 }}
+            className={`m-0 text-[clamp(1rem,4.4vw,1.12rem)] leading-[1.95] sm:leading-[2.05] text-[#F8F4EE]/92 text-left whitespace-pre-line font-light tracking-[0.03em] ${idx === 0 ? 'mb-2 font-serif italic text-[#E7D3AB] text-[clamp(1.08rem,4.8vw,1.24rem)]' : 'font-serif italic'} break-words [overflow-wrap:anywhere]`}
           >
             {para}
           </motion.p>

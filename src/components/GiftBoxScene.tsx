@@ -1,16 +1,15 @@
-import React, { useRef, useState, useEffect, memo, useMemo } from 'react';
-import { useFrame, ThreeEvent } from '@react-three/fiber';
-import { Box, useCursor, Float, Environment, Stars, Sphere, Sparkles, OrbitControls, Preload } from '@react-three/drei';
+import React, { useRef, useEffect, memo, useMemo } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { Box, Float, Environment, Stars, Sphere, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { BirthdayStep } from '../types/birthday';
 
 interface GiftBoxProps {
   step: BirthdayStep;
-  onOpen: () => void;
 }
 
-export const GiftBoxScene = memo(function GiftBoxScene({ step, onOpen }: GiftBoxProps) {
+export const GiftBoxScene = memo(function GiftBoxScene({ step }: GiftBoxProps) {
   const groupRef = useRef<THREE.Group>(null);
   const boxGroupRef = useRef<THREE.Group>(null);
   const lidGroupRef = useRef<THREE.Group>(null);
@@ -18,8 +17,6 @@ export const GiftBoxScene = memo(function GiftBoxScene({ step, onOpen }: GiftBox
   const tracksRef = useRef<THREE.Group>(null);
   const timelineGroupRef = useRef<THREE.Group>(null);
   const pointLightRef = useRef<THREE.PointLight>(null);
-  const [hovered, setHovered] = useState(false);
-  useCursor(hovered && step === 'ready');
 
   // Memoize static arrays to prevent re-renders
   const verticalEdgePositions = useMemo(() => {
@@ -149,52 +146,22 @@ export const GiftBoxScene = memo(function GiftBoxScene({ step, onOpen }: GiftBox
     }
   }, [step]);
 
-  const handleInteraction = (e: ThreeEvent<PointerEvent>) => {
-    e.stopPropagation();
-    if (step === 'ready') {
-      // Scale pop effect
-      if (groupRef.current) {
-        gsap.to(groupRef.current.scale, {
-          x: 1.15,
-          y: 1.15,
-          z: 1.15,
-          duration: 0.15,
-          yoyo: true,
-          repeat: 1,
-          ease: 'power2.out',
-        });
-      }
-      onOpen();
-    }
-  };
-
   const isTimelineActive = step === 'cosmic-core' || step === 'timeline-expand' || textSteps.includes(step);
 
   return (
     <>
-      <OrbitControls 
-        enablePan={false} 
-        enableRotate={false}
-        enableZoom={false} 
-        minPolarAngle={Math.PI / 4} 
-        maxPolarAngle={Math.PI / 1.5}
-        autoRotate={step === 'ready' || isTimelineActive}
-        autoRotateSpeed={step === 'ready' ? 0.4 : 0.2}
-        makeDefault
-      />
-      
       <ambientLight intensity={0.72} />
-      <directionalLight position={[5, 5, 5]} intensity={1.25} />
-      <pointLight ref={pointLightRef} position={[0, 2, 4]} intensity={2.6} color="#F8F4EE" />
+      <directionalLight position={[5, 5, 5]} intensity={0.95} />
+      <pointLight ref={pointLightRef} position={[0, 2, 4]} intensity={2.1} color="#F8F4EE" />
       
       <fog attach="fog" args={['#05050A', 5, 25]} />
       
       {/* Layered Starry Sky - More subtle */}
-      <Stars radius={100} depth={50} count={900} factor={2} saturation={0} fade speed={0.08} />
-      <Stars radius={150} depth={50} count={180} factor={3} saturation={0.15} fade speed={0.2} />
+      <Stars radius={90} depth={42} count={220} factor={1.35} saturation={0} fade speed={0.06} />
+      <Stars radius={130} depth={42} count={42} factor={1.75} saturation={0.12} fade speed={0.12} />
       
       {/* Nebula Glow Effect - Deeper and more subtle */}
-      <Sphere args={[60, 16, 16]} scale={[-1, 1, 1]}>
+      <Sphere args={[56, 10, 10]} scale={[-1, 1, 1]}>
         <meshBasicMaterial 
           color="#05050A" 
           side={THREE.BackSide} 
@@ -204,15 +171,10 @@ export const GiftBoxScene = memo(function GiftBoxScene({ step, onOpen }: GiftBox
       </Sphere>
       
       {/* Gentle floating light particles */}
-      <Sparkles count={42} scale={15} size={1.2} speed={0.16} opacity={0.28} color="#D8C4A8" />
+      <Sparkles count={10} scale={12} size={0.8} speed={0.1} opacity={0.16} color="#D8C4A8" />
       
       <Float speed={1.2} rotationIntensity={0.2} floatIntensity={0.6}>
-        <group 
-          ref={groupRef} 
-          onPointerDown={handleInteraction} 
-          onPointerOver={() => setHovered(true)} 
-          onPointerOut={() => setHovered(false)}
-        >
+        <group ref={groupRef}>
           <group ref={boxGroupRef}>
             {/* Box Base - Luxurious Polished Crystal with Iridescence & Gold Frame */}
             <group position={[0, -0.25, 0]}>
@@ -274,8 +236,8 @@ export const GiftBoxScene = memo(function GiftBoxScene({ step, onOpen }: GiftBox
                     opacity={0.08} 
                   />
                 </Sphere>
-                <pointLight intensity={8} color="#C5A059" distance={8} decay={2} />
-                <Sparkles count={20} scale={2} size={3} speed={0.8} color="#C5A059" opacity={0.45} />
+                <pointLight intensity={5.8} color="#C5A059" distance={6} decay={2} />
+                <Sparkles count={5} scale={1.6} size={1.9} speed={0.42} color="#C5A059" opacity={0.24} />
               </group>
             )}
             
@@ -364,7 +326,7 @@ export const GiftBoxScene = memo(function GiftBoxScene({ step, onOpen }: GiftBox
                 <meshBasicMaterial color="#FFF" />
               </Sphere>
               {/* Soft Glow Layers */}
-              <Sphere args={[0.4, 24, 24]}>
+              <Sphere args={[0.34, 12, 12]}>
                 <meshStandardMaterial 
                   color="#D8C4A8" 
                   transparent 
@@ -373,8 +335,8 @@ export const GiftBoxScene = memo(function GiftBoxScene({ step, onOpen }: GiftBox
                   emissiveIntensity={2}
                 />
               </Sphere>
-              <pointLight intensity={4} color="#F8F4EE" distance={10} decay={2} />
-              <Sparkles count={10} scale={2} size={1} speed={0.22} color="#F8F4EE" opacity={0.18} />
+              <pointLight intensity={2.8} color="#F8F4EE" distance={8} decay={2} />
+              <Sparkles count={4} scale={1.6} size={0.7} speed={0.12} color="#F8F4EE" opacity={0.12} />
             </group>
 
             {/* Timeline Tracks & Nodes - Ultra-thin lines */}
@@ -441,13 +403,10 @@ export const GiftBoxScene = memo(function GiftBoxScene({ step, onOpen }: GiftBox
             </group>
             
             {/* Magic dust - Very subtle */}
-            <Sparkles count={10} scale={3} size={1} speed={0.16} color="#F8F4EE" opacity={0.14} />
+            <Sparkles count={3} scale={2.4} size={0.7} speed={0.08} color="#F8F4EE" opacity={0.1} />
           </group>
         )}
       </Float>
-
-      <Environment preset="night" />
-      <Preload all />
     </>
   );
 });

@@ -27,9 +27,28 @@ export const IntroOverlay = memo(function IntroOverlay({
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 20 }}
-        transition={{ duration: 2.35, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 1.05, ease: [0.22, 1, 0.36, 1] }}
         className="flex flex-col items-start gap-6 relative max-w-[min(90vw,420px)]"
       >
+        <motion.div
+          aria-hidden="true"
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: [0.14, 0.24, 0.14], scale: [0.98, 1.02, 0.98], rotate: [0, 3, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+          className="pointer-events-none absolute -right-4 -top-10 h-28 w-28 rounded-full border border-[#C5A059]/12"
+        >
+          <div className="absolute inset-[0.7rem] rounded-full border border-[#C5A059]/10" />
+          <div className="absolute inset-[1.4rem] rounded-full border border-[#C5A059]/8" />
+        </motion.div>
+
+        <motion.div
+          aria-hidden="true"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0.06, 0.16, 0.06], x: [0, 6, 0], y: [0, -4, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+          className="pointer-events-none absolute -left-10 bottom-4 h-16 w-24 rounded-[999px] border border-white/8"
+        />
+
         {/* Editorial Accent Line */}
         <div className="w-12 h-[1px] bg-gradient-to-r from-[#C5A059]/60 to-transparent" />
 

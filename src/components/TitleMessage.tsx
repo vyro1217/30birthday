@@ -18,7 +18,7 @@ export const TitleMessage = memo(function TitleMessage({ title, subtitle }: Titl
         initial={{ opacity: 0, x: -30 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, scale: 1.05 }}
-        transition={{ duration: 1.45, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
         className="m-0 text-[clamp(2rem,10vw,3.8rem)] font-light font-serif italic text-[#F8F4EE] tracking-[-0.03em] leading-[1.08] break-words"
       >
         {title}
@@ -27,7 +27,7 @@ export const TitleMessage = memo(function TitleMessage({ title, subtitle }: Titl
         <motion.div
           initial={{ opacity: 0, width: 0 }}
           animate={{ opacity: 1, width: "100%" }}
-          transition={{ delay: 0.5, duration: 1.2 }}
+          transition={{ delay: 0.18, duration: 0.7 }}
           className="flex flex-col items-start gap-4 w-full"
         >
           <div className="w-16 h-[1px] bg-gradient-to-r from-[#C5A059] to-transparent" />

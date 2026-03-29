@@ -8,6 +8,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useBirthdayFlow } from './composables/useBirthdayFlow';
 import { useBackgroundAudio } from './composables/useBackgroundAudio';
 import { birthdayContent } from './data/content';
+import { getPublicAssetPath } from './lib/assetPaths';
 import { IntroOverlay } from './components/IntroOverlay';
 import { TitleMessage } from './components/TitleMessage';
 import { MainBlessing } from './components/MainBlessing';
@@ -34,10 +35,17 @@ const TRANSITION_ONLY_STEPS = new Set<BirthdayStep>([
   'timeline-expand',
 ]);
 
+type NavigatorConnection = {
+  saveData?: boolean;
+  effectiveType?: string;
+};
+
 function getPreferredExperienceMode(): ExperienceMode {
-  const connection = navigator.connection as
-    | (Navigator['connection'] & { saveData?: boolean; effectiveType?: string })
-    | undefined;
+  const connection = (
+    navigator as Navigator & {
+      connection?: NavigatorConnection;
+    }
+  ).connection;
 
   const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const saveData = connection?.saveData === true;
@@ -49,7 +57,7 @@ function getPreferredExperienceMode(): ExperienceMode {
     typeof (navigator as Navigator & { deviceMemory?: number }).deviceMemory === 'number' &&
     (navigator as Navigator & { deviceMemory?: number }).deviceMemory! <= 4;
   const isLineBrowser = /Line\//i.test(navigator.userAgent);
-  const shouldUseReadable = saveData || slowConnection || (isLineBrowser && (lowCpu || lowMemory));
+  const shouldUseReadable = saveData || slowConnection;
 
   if (shouldUseReadable) {
     return 'readable';
@@ -60,6 +68,29 @@ function getPreferredExperienceMode(): ExperienceMode {
   }
 
   return 'full';
+}
+
+function getInitialExperienceMode(): ExperienceMode {
+  if (typeof window === 'undefined') {
+    return 'lite';
+  }
+
+  const preferredExperienceMode = getPreferredExperienceMode();
+  if (preferredExperienceMode !== 'full') {
+    return preferredExperienceMode;
+  }
+
+  try {
+    const canvas = document.createElement('canvas');
+    const hasWebglSupport = !!(
+      window.WebGLRenderingContext &&
+      (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))
+    );
+
+    return hasWebglSupport ? 'full' : 'lite';
+  } catch {
+    return 'lite';
+  }
 }
 
 class SceneErrorBoundary extends React.Component<
@@ -85,30 +116,11 @@ class SceneErrorBoundary extends React.Component<
   }
 }
 
-function BootOverlay() {
-  return (
-    <motion.div
-      initial={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="absolute inset-0 z-[120] flex items-center justify-center bg-[#05050A]"
-    >
-      <div className="flex flex-col items-center gap-4 text-center">
-        <div className="h-14 w-20 rounded-[1rem] border border-[#C5A059]/30 bg-white/[0.03]" />
-        <p className="m-0 text-[0.72rem] uppercase tracking-[0.28em] text-[#C5A059]/72">
-          {birthdayContent.ui.bootLabel}
-        </p>
-      </div>
-    </motion.div>
-  );
-}
-
 export default function App() {
   const activeSteps = React.useMemo<BirthdayStep[]>(() => {
     const activeMemorySteps = MEMORY_STEPS.slice(0, birthdayContent.memorySequence.length);
 
     return [
-      'intro',
       'ready',
       'opening',
       'cosmic-core',
@@ -141,11 +153,14 @@ export default function App() {
     );
   }, []);
 
-  const { step, openGift, prevStep, nextStep } = useBirthdayFlow(activeSteps, memoryAutoAdvanceDelays);
+  const { step, openGift, prevStep, nextStep } = useBirthdayFlow(
+    activeSteps,
+    memoryAutoAdvanceDelays,
+    'ready',
+  );
   const backgroundAudio = useBackgroundAudio(birthdayContent.backgroundAudio);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [experienceMode, setExperienceMode] = useState<ExperienceMode>('full');
-  const [isBooting, setIsBooting] = useState(true);
+  const [experienceMode, setExperienceMode] = useState<ExperienceMode>(getInitialExperienceMode);
   const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
@@ -176,34 +191,14 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const preferredExperienceMode = getPreferredExperienceMode();
-    if (preferredExperienceMode !== 'full') {
-      setExperienceMode(preferredExperienceMode);
-      return;
-    }
-
-    try {
-      const canvas = document.createElement('canvas');
-      const support = !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
-      if (!support) {
-        setExperienceMode('lite');
-      }
-    } catch {
-      setExperienceMode('lite');
-    }
-  }, []);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setIsBooting(false);
-    }, 900);
-
-    return () => window.clearTimeout(timer);
+    setExperienceMode(getInitialExperienceMode());
   }, []);
 
   const isReadableExperience = experienceMode === 'readable';
   const isLiteExperience = experienceMode === 'lite';
-  const showNavigation = !isReadableExperience && !TRANSITION_ONLY_STEPS.has(step);
+  const shouldRenderFullScene =
+    !isReadableExperience && !isLiteExperience && step !== 'ready' && step !== 'opening';
+  const showNavigation = !isReadableExperience && !TRANSITION_ONLY_STEPS.has(step) && step !== 'ready';
 
   const handleSceneFailure = () => {
     setDegradedExperienceMode('lite');
@@ -264,11 +259,11 @@ export default function App() {
       </div>
 
       {/* 3D Scene Layer */}
-      {!isReadableExperience && !isLiteExperience && (
-        <div className="absolute inset-0 z-[1]">
+      {shouldRenderFullScene && (
+        <div className="pointer-events-none absolute inset-0 z-[1]">
           <SceneErrorBoundary onError={handleSceneFailure}>
             <Suspense fallback={null}>
-              <FullSceneCanvas step={step} onOpen={handleOpenGift} onSceneFailure={handleSceneFailure} />
+              <FullSceneCanvas step={step} onSceneFailure={handleSceneFailure} />
             </Suspense>
           </SceneErrorBoundary>
         </div>
@@ -286,7 +281,13 @@ export default function App() {
             >
               <IntroOverlay text={birthdayContent.intro.message} mode="inline" />
               <IntroOverlay text={birthdayContent.before.text} mode="inline" />
-              <MemoryNote text={birthdayContent.us.text} image={birthdayContent.us.image} imageAlt={birthdayContent.us.imageAlt} />
+              <MemoryNote
+                text={birthdayContent.us.text}
+                image={birthdayContent.us.image}
+                imageAlt={birthdayContent.us.imageAlt}
+                imageLoading="eager"
+                imageFetchPriority="high"
+              />
               {birthdayContent.memorySequence.map((memoryMoment, index) => (
                 <MemoryNote
                   key={memoryMoment.id}
@@ -295,6 +296,8 @@ export default function App() {
                   imageAlt={memoryMoment.imageAlt}
                   eyebrow={memoryMoment.eyebrow}
                   align={index % 2 === 1 ? 'right' : 'left'}
+                  imageLoading={index === 0 ? 'eager' : 'lazy'}
+                  imageFetchPriority={index === 0 ? 'high' : 'low'}
                 />
               ))}
               <IntroOverlay text={birthdayContent.afterMemory.text} mode="inline" />
@@ -308,46 +311,21 @@ export default function App() {
             </motion.div>
           ) : (
             <>
-          {step === 'intro' && (
-            <IntroOverlay key="intro" text={birthdayContent.intro.message} />
-          )}
-
-          {['opening', 'cosmic-core', 'timeline-expand'].includes(step) && birthdayContent.giftPrompt.transition && (
+          {['cosmic-core', 'timeline-expand'].includes(step) && birthdayContent.giftPrompt.transition && (
             <IntroOverlay key="transition" text={birthdayContent.giftPrompt.transition} />
           )}
 
-          {step === 'ready' && (
+          {(step === 'ready' || step === 'opening') && (
             <div key="ready-stage" className="pointer-events-auto">
-              <LiteGiftPrompt
-                isVisible={isLiteExperience}
+              <OpeningStage
+                message={birthdayContent.intro.message}
                 hint={birthdayContent.giftPrompt.hint}
+                photo={getPublicAssetPath('photos/rita.jpg')}
+                photoAlt="A portrait of Rita"
+                stageOverride={step === 'opening' ? 'revealed' : undefined}
                 onOpen={handleOpenGift}
               />
             </div>
-          )}
-
-          {step === 'ready' && !isLiteExperience && (
-            <motion.div
-              key="hint"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.6 }}
-              exit={{ opacity: 0 }}
-              className="absolute bottom-12 right-12 text-right text-[0.7rem] tracking-[0.3em] text-[#F8F4EE]/40 uppercase font-light pointer-events-none hidden sm:block"
-            >
-              {birthdayContent.giftPrompt.hint}
-            </motion.div>
-          )}
-
-          {step === 'ready' && !isLiteExperience && (
-            <motion.div
-              key="hint-mobile"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.6 }}
-              exit={{ opacity: 0 }}
-              className="absolute left-0 right-0 bottom-[max(4.5rem,calc(env(safe-area-inset-bottom)+4rem))] px-6 text-center text-[0.65rem] tracking-[0.2em] text-[#F8F4EE]/40 uppercase font-light pointer-events-none sm:hidden"
-            >
-              {birthdayContent.giftPrompt.hint}
-            </motion.div>
           )}
 
           {step === 'node-before' && (
@@ -356,7 +334,13 @@ export default function App() {
 
           {step === 'node-us' && (
             <div key="node-us" className="pointer-events-auto">
-              <MemoryNote text={birthdayContent.us.text} image={birthdayContent.us.image} />
+              <MemoryNote
+                text={birthdayContent.us.text}
+                image={birthdayContent.us.image}
+                imageAlt={birthdayContent.us.imageAlt}
+                imageLoading="eager"
+                imageFetchPriority="high"
+              />
             </div>
           )}
 
@@ -374,6 +358,8 @@ export default function App() {
                   imageAlt={memoryMoment.imageAlt}
                   eyebrow={memoryMoment.eyebrow}
                   align={index % 2 === 1 ? 'right' : 'left'}
+                  imageLoading="eager"
+                  imageFetchPriority="high"
                 />
               </div>
             );
@@ -435,45 +421,268 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {isBooting && <BootOverlay />}
-      </AnimatePresence>
     </main>
   );
 }
 
-const LiteGiftPrompt = React.memo(function LiteGiftPrompt({
-  isVisible,
+const OpeningStage = React.memo(function OpeningStage({
+  message,
   hint,
+  photo,
+  photoAlt,
+  stageOverride,
   onOpen,
 }: {
-  isVisible: boolean;
+  message: string;
   hint: string;
+  photo: string;
+  photoAlt: string;
+  stageOverride?: 'revealed';
   onOpen: () => void;
 }) {
-  if (!isVisible) {
-    return null;
-  }
+  const [authStage, setAuthStage] = React.useState<'idle' | 'scanning' | 'revealed'>('idle');
+  const openTimerRef = React.useRef<number | null>(null);
+  const currentStage = stageOverride ?? authStage;
+
+  React.useEffect(() => {
+    return () => {
+      if (openTimerRef.current !== null) {
+        window.clearTimeout(openTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleAuthenticate = React.useCallback(() => {
+    if (stageOverride || authStage !== 'idle') {
+      return;
+    }
+
+    setAuthStage('scanning');
+    openTimerRef.current = window.setTimeout(() => {
+      setAuthStage('revealed');
+      openTimerRef.current = window.setTimeout(() => {
+        onOpen();
+      }, 220);
+    }, 1350);
+  }, [authStage, onOpen, stageOverride]);
 
   return (
-    <motion.button
+    <motion.section
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -24 }}
-      onClick={onOpen}
-      className="group flex min-h-52 w-[min(88vw,22rem)] flex-col items-center justify-center gap-5 rounded-[2rem] border border-white/10 bg-white/[0.04] px-8 py-10 text-center shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-2xl"
-      aria-label={birthdayContent.ui.openGiftAriaLabel}
+      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+      className="mx-auto flex w-[min(92vw,29rem)] flex-col items-start gap-7 rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.03))] px-6 py-7 text-left shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:px-8 sm:py-9"
     >
-      <div className="relative h-20 w-24">
-        <div className="absolute inset-x-0 bottom-0 h-14 rounded-[1.2rem] border border-[#C5A059]/35 bg-white/[0.03]" />
-        <div className="absolute left-1/2 top-1 h-10 w-16 -translate-x-1/2 rounded-t-[1rem] border border-[#C5A059]/45 bg-white/[0.05]" />
-        <div className="absolute left-1/2 top-8 h-[1px] w-16 -translate-x-1/2 bg-[#C5A059]/45" />
+      <div className="flex items-center gap-4">
+        <div className="relative h-16 w-20 shrink-0">
+          <div className="absolute inset-x-0 bottom-0 h-11 rounded-[1rem] border border-[#C5A059]/35 bg-white/[0.03]" />
+          <div className="absolute left-1/2 top-1 h-8 w-12 -translate-x-1/2 rounded-t-[0.8rem] border border-[#C5A059]/45 bg-white/[0.05]" />
+          <div className="absolute left-1/2 top-6 h-[1px] w-12 -translate-x-1/2 bg-[#C5A059]/45" />
+        </div>
+        <div className="flex flex-col gap-2">
+          <span className="text-[0.64rem] uppercase tracking-[0.32em] text-[#C5A059]/82">
+            A small card for you
+          </span>
+          <h1 className="m-0 text-[clamp(1.6rem,7vw,2.2rem)] font-light italic font-serif tracking-[-0.02em] text-[#F8F4EE]">
+            Happy 30th Birthday
+          </h1>
+        </div>
       </div>
-      <span className="text-[0.7rem] uppercase tracking-[0.32em] text-[#C5A059]/75">
-        {birthdayContent.ui.litePromptEyebrow}
-      </span>
-      <span className="text-[clamp(0.95rem,4vw,1.05rem)] font-light text-[#F8F4EE]">{hint}</span>
-    </motion.button>
+
+      <p className="m-0 whitespace-pre-line text-[clamp(1rem,4.2vw,1.08rem)] leading-[1.9] font-light italic font-serif tracking-[0.03em] text-[#F8F4EE]/92">
+        {message}
+      </p>
+
+      <div className="h-px w-full bg-gradient-to-r from-[#C5A059]/30 via-white/10 to-transparent" />
+
+      <div className="grid w-full gap-5">
+        <motion.div
+          initial={false}
+          animate={currentStage === 'revealed' ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0.82, y: 0, scale: 0.985 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="relative mx-auto w-full max-w-[18.5rem] overflow-hidden rounded-[1.75rem] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.035))] p-[0.65rem] shadow-[0_22px_60px_rgba(0,0,0,0.28)]"
+        >
+          <div className="pointer-events-none absolute inset-x-6 top-2 h-5 rounded-b-[1.2rem] bg-white/[0.075] blur-md" />
+          <div className="pointer-events-none absolute left-1/2 top-3 z-[3] h-1 w-16 -translate-x-1/2 rounded-full bg-white/30" />
+          <div className="relative aspect-[4/5] overflow-hidden rounded-[1.35rem] border border-white/10 bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.14),rgba(255,255,255,0.03)_48%,rgba(0,0,0,0.08)_100%)]">
+            <motion.img
+              src={photo}
+              alt=""
+              aria-hidden="true"
+              initial={false}
+              animate={
+                currentStage === 'revealed'
+                  ? { scale: 1.04, filter: 'blur(18px)', opacity: 0.28 }
+                  : { scale: 1.1, filter: 'blur(22px)', opacity: 0.34 }
+              }
+              transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+
+            <motion.img
+              src={photo}
+              alt={photoAlt}
+              initial={false}
+              animate={
+                currentStage === 'revealed'
+                  ? { scale: 1, filter: 'blur(0px)', opacity: 1 }
+                  : { scale: 1.02, filter: 'blur(10px)', opacity: 0.72 }
+              }
+              transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+              className="relative z-[1] h-full w-full object-contain px-2 pt-2"
+            />
+
+            <motion.div
+              initial={false}
+              animate={
+                currentStage === 'scanning'
+                  ? { opacity: [0.1, 0.38, 0.1], y: ['-100%', '120%', '120%'] }
+                  : currentStage === 'revealed'
+                    ? { opacity: 0 }
+                    : { opacity: 0.1, y: '0%' }
+              }
+              transition={
+                currentStage === 'scanning'
+                  ? { duration: 1.1, repeat: 0, ease: 'easeInOut' }
+                  : { duration: 0.3 }
+              }
+              className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-[#C5A059]/0 via-[#C5A059]/45 to-[#C5A059]/0 blur-xl"
+            />
+
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/48 via-black/10 to-transparent" />
+
+            <motion.div
+              initial={false}
+              animate={
+                currentStage === 'revealed'
+                  ? { opacity: [0, 0.24, 0.12], scale: [0.92, 1.04, 1] }
+                  : { opacity: 0, scale: 0.96 }
+              }
+              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+              className="pointer-events-none absolute inset-0 rounded-[1.35rem] border border-[#E6C98A]/25 bg-[radial-gradient(circle_at_50%_35%,rgba(230,201,138,0.24),rgba(230,201,138,0.06)_38%,transparent_72%)]"
+            />
+          </div>
+
+          <motion.div
+            initial={false}
+            animate={
+              currentStage === 'revealed'
+                ? { opacity: 1, y: 0 }
+                : { opacity: 0.84, y: 0 }
+            }
+            transition={{ duration: 0.45 }}
+            className="mt-3 px-1"
+          >
+            <div className="rounded-[1rem] border border-white/14 bg-[linear-gradient(180deg,rgba(8,8,12,0.68),rgba(8,8,12,0.52))] px-3.5 py-2.5 shadow-[0_10px_24px_rgba(0,0,0,0.24)] backdrop-blur-md">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[0.6rem] uppercase tracking-[0.28em] text-[#E4C27E]">
+                    {currentStage === 'revealed' ? 'Only yours' : 'My Rita'}
+                  </span>
+                  <span className="text-[0.98rem] font-light italic font-serif tracking-[0.01em] text-[#FFF8EE]">
+                    {currentStage === 'revealed' ? 'Kept close, for you.' : 'A little birthday card I made for you'}
+                  </span>
+                </div>
+              </div>
+          </motion.div>
+        </motion.div>
+
+        <motion.button
+          type="button"
+          onClick={handleAuthenticate}
+          disabled={currentStage !== 'idle'}
+          whileTap={currentStage === 'idle' ? { scale: 0.985 } : undefined}
+          className="flex min-h-15 w-full items-center gap-4 rounded-[1.2rem] border border-[#C5A059]/24 bg-[linear-gradient(180deg,rgba(248,244,238,0.08),rgba(248,244,238,0.04))] px-5 py-4 text-left shadow-[0_14px_40px_rgba(0,0,0,0.22)] transition-colors duration-300 hover:bg-[#F8F4EE]/[0.08] disabled:cursor-default"
+          aria-label={birthdayContent.ui.openGiftAriaLabel}
+        >
+          <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-[1rem] border border-[#C5A059]/16 bg-black/20">
+            <motion.div
+              initial={false}
+              animate={
+                currentStage === 'scanning'
+                  ? { scale: [1, 1.03, 1], opacity: [0.16, 0.45, 0.16] }
+                  : currentStage === 'revealed'
+                    ? { scale: 1.01, opacity: 0.52 }
+                    : { scale: 1, opacity: 0.18 }
+              }
+              transition={
+                currentStage === 'scanning'
+                  ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' }
+                  : { duration: 0.3 }
+              }
+              className="absolute inset-0 rounded-[1rem] border border-[#C5A059]/18"
+            />
+            <div className="relative h-7 w-7">
+              <div className="absolute left-0 top-0 h-2.5 w-2.5 rounded-tl-[0.35rem] border-l-[1.5px] border-t-[1.5px] border-[#F8F4EE]/78" />
+              <div className="absolute right-0 top-0 h-2.5 w-2.5 rounded-tr-[0.35rem] border-r-[1.5px] border-t-[1.5px] border-[#F8F4EE]/78" />
+              <div className="absolute bottom-0 left-0 h-2.5 w-2.5 rounded-bl-[0.35rem] border-b-[1.5px] border-l-[1.5px] border-[#F8F4EE]/78" />
+              <div className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-br-[0.35rem] border-b-[1.5px] border-r-[1.5px] border-[#F8F4EE]/78" />
+              <motion.div
+                initial={false}
+                animate={
+                  currentStage === 'scanning'
+                    ? { opacity: [0.16, 0.55, 0.16] }
+                    : currentStage === 'revealed'
+                      ? { opacity: 0.2 }
+                      : { opacity: 0.08 }
+                }
+                transition={
+                  currentStage === 'scanning'
+                    ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' }
+                  : { duration: 0.25 }
+                }
+                className="absolute inset-[0.35rem] rounded-[0.35rem] border border-white/20"
+              />
+              <motion.div
+                initial={false}
+                animate={
+                  currentStage === 'scanning'
+                    ? { opacity: [0.08, 0.8, 0.08], y: ['-85%', '85%', '85%'] }
+                    : currentStage === 'revealed'
+                      ? { opacity: 0 }
+                      : { opacity: 0, y: '0%' }
+                }
+                transition={
+                  currentStage === 'scanning'
+                    ? { duration: 1.15, repeat: Infinity, ease: 'easeInOut' }
+                    : { duration: 0.25 }
+                }
+                className="absolute inset-x-1 top-1/2 h-px bg-[linear-gradient(90deg,transparent,rgba(248,244,238,0.92),transparent)]"
+              />
+              <motion.div
+                initial={false}
+                animate={
+                  currentStage === 'revealed'
+                    ? { opacity: 1, scale: 1 }
+                    : { opacity: 0, scale: 0.7 }
+                }
+                transition={{ duration: 0.25 }}
+                className="absolute inset-0 flex items-center justify-center"
+              >
+                <div className="h-1.5 w-1.5 rounded-full bg-[#C5A059]" />
+              </motion.div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="text-[0.72rem] uppercase tracking-[0.24em] text-[#C5A059]/86">
+              {currentStage === 'idle'
+                ? 'Face ID'
+                : currentStage === 'scanning'
+                  ? 'Scanning'
+                  : 'Welcome, Rita'}
+            </span>
+            <span className="text-[1rem] font-light italic font-serif text-[#F8F4EE]">
+              {currentStage === 'idle'
+                ? 'Look here to open your card'
+                : currentStage === 'scanning'
+                  ? 'Gently opening your card'
+                  : 'Opening your card'}
+            </span>
+          </div>
+        </motion.button>
+      </div>
+    </motion.section>
   );
 });
 

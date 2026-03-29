@@ -5,13 +5,11 @@ import { BirthdayStep } from '../types/birthday';
 
 interface FullSceneCanvasProps {
   step: BirthdayStep;
-  onOpen: () => void;
   onSceneFailure: () => void;
 }
 
 export const FullSceneCanvas = React.memo(function FullSceneCanvas({
   step,
-  onOpen,
   onSceneFailure,
 }: FullSceneCanvasProps) {
   return (
@@ -20,14 +18,18 @@ export const FullSceneCanvas = React.memo(function FullSceneCanvas({
       gl={{
         antialias: false,
         alpha: true,
-        powerPreference: 'default',
+        powerPreference: 'low-power',
+        stencil: false,
+        depth: true,
       }}
-      dpr={[1, 1.5]}
-      performance={{ min: 0.5 }}
+      dpr={[1, 1.05]}
+      frameloop="always"
+      performance={{ min: 0.3 }}
       onCreated={({ gl }) => {
         gl.domElement.addEventListener(
           'webglcontextlost',
-          () => {
+          (event) => {
+            event.preventDefault();
             onSceneFailure();
           },
           { once: true },
@@ -35,7 +37,7 @@ export const FullSceneCanvas = React.memo(function FullSceneCanvas({
       }}
     >
       <Suspense fallback={null}>
-        <GiftBoxScene step={step} onOpen={onOpen} />
+        <GiftBoxScene step={step} />
       </Suspense>
     </Canvas>
   );
