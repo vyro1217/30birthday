@@ -15,10 +15,6 @@ export type BirthdayStep =
   | 'message2'
   | 'final';
 
-export interface BirthdayIntroContent {
-  message: string;
-}
-
 export interface BirthdayGiftPromptContent {
   hint: string;
   transition?: string;
@@ -40,14 +36,14 @@ export interface BirthdayMemoryMoment extends BirthdayPhotoSection {
   pauseMs?: number;
 }
 
-export interface BirthdayThirtySection {
+export interface BirthdayBlessingSection {
   title: string;
   subtitle: string;
   reflection: string;
   wish: string;
 }
 
-export interface BirthdayFinalBlessing {
+export interface BirthdayClosingSection {
   text: string;
 }
 
@@ -67,15 +63,50 @@ export interface BirthdayUiCopy {
   musicOffLabel: string;
 }
 
-export interface BirthdayContent {
-  ui: BirthdayUiCopy;
-  backgroundAudio: BirthdayBackgroundAudio;
-  intro: BirthdayIntroContent;
+export interface BirthdayPreviewContent {
+  pageTitle: string;
+  appTitle: string;
+  description: string;
+  ogTitle: string;
+  ogDescription: string;
+  ogImageAlt: string;
+  linePreviewText: string;
+}
+
+export interface BirthdayOpeningContent {
+  introText: string;
+  cardEyebrow: string;
+  cardTitle: string;
   giftPrompt: BirthdayGiftPromptContent;
+  photoLockedEyebrow: string;
+  photoLockedText: string;
+  photoUnlockedEyebrow: string;
+  photoUnlockedText: string;
+  faceIdIdleEyebrow: string;
+  faceIdIdleText: string;
+  faceIdScanningEyebrow: string;
+  faceIdScanningText: string;
+  faceIdUnlockedEyebrow: string;
+  faceIdUnlockedText: string;
+  featuredPhoto: {
+    image: string;
+    imageAlt: string;
+  };
+}
+
+export interface BirthdayStoryContent {
   before: BirthdayStorySection;
   us: BirthdayPhotoSection & { text: string };
-  memorySequence: BirthdayMemoryMoment[];
-  afterMemory: BirthdayStorySection;
-  thirtiethBirthday: BirthdayThirtySection;
-  finalBlessing: BirthdayFinalBlessing;
+  memories: BirthdayMemoryMoment[];
+  after: BirthdayStorySection;
+}
+
+export interface BirthdayContent {
+  preview: BirthdayPreviewContent;
+  ui: BirthdayUiCopy;
+  backgroundAudio: BirthdayBackgroundAudio;
+  opening: BirthdayOpeningContent;
+  story: BirthdayStoryContent;
+  blessing: BirthdayBlessingSection;
+  closing: BirthdayClosingSection;
 }

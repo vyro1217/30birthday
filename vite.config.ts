@@ -2,6 +2,7 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
+import { birthdayCardContentConfig } from './src/data/content';
 
 // Default assumptions for local production builds:
 // - owner: vyro1217
@@ -57,6 +58,7 @@ export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const { basePath, siteUrl, ogImageUrl } = getGithubPagesConfig(env);
   const resolvedBasePath = command === 'serve' ? '/' : basePath;
+  const preview = birthdayCardContentConfig.preview;
 
   return {
     base: resolvedBasePath,
@@ -68,7 +70,14 @@ export default defineConfig(({ command, mode }) => {
         transformIndexHtml(html) {
           return html
             .replace(/__SITE_URL__/g, siteUrl)
-            .replace(/__OG_IMAGE_URL__/g, ogImageUrl);
+            .replace(/__OG_IMAGE_URL__/g, ogImageUrl)
+            .replace(/__PAGE_TITLE__/g, preview.pageTitle)
+            .replace(/__APP_TITLE__/g, preview.appTitle)
+            .replace(/__META_DESCRIPTION__/g, preview.description)
+            .replace(/__OG_TITLE__/g, preview.ogTitle)
+            .replace(/__OG_DESCRIPTION__/g, preview.linePreviewText)
+            .replace(/__OG_IMAGE_ALT__/g, preview.ogImageAlt)
+            .replace(/__LINE_PREVIEW_TEXT__/g, preview.linePreviewText);
         },
       },
     ],

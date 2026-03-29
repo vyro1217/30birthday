@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 
 interface IntroOverlayProps {
   text: string;
@@ -11,6 +11,7 @@ export const IntroOverlay = memo(function IntroOverlay({
   mode = 'overlay',
 }: IntroOverlayProps) {
   const isOverlay = mode === 'overlay';
+  const prefersReducedMotion = useReducedMotion();
 
   return (
     <motion.div 
@@ -33,8 +34,12 @@ export const IntroOverlay = memo(function IntroOverlay({
         <motion.div
           aria-hidden="true"
           initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: [0.14, 0.24, 0.14], scale: [0.98, 1.02, 0.98], rotate: [0, 3, 0] }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+          animate={
+            prefersReducedMotion
+              ? { opacity: 0.16, scale: 1, rotate: 0 }
+              : { opacity: [0.14, 0.24, 0.14], scale: [0.98, 1.02, 0.98], rotate: [0, 3, 0] }
+          }
+          transition={prefersReducedMotion ? { duration: 0.2 } : { duration: 8, repeat: Infinity, ease: 'easeInOut' }}
           className="pointer-events-none absolute -right-4 -top-10 h-28 w-28 rounded-full border border-[#C5A059]/12"
         >
           <div className="absolute inset-[0.7rem] rounded-full border border-[#C5A059]/10" />
@@ -44,8 +49,12 @@ export const IntroOverlay = memo(function IntroOverlay({
         <motion.div
           aria-hidden="true"
           initial={{ opacity: 0 }}
-          animate={{ opacity: [0.06, 0.16, 0.06], x: [0, 6, 0], y: [0, -4, 0] }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+          animate={
+            prefersReducedMotion
+              ? { opacity: 0.1, x: 0, y: 0 }
+              : { opacity: [0.06, 0.16, 0.06], x: [0, 6, 0], y: [0, -4, 0] }
+          }
+          transition={prefersReducedMotion ? { duration: 0.2 } : { duration: 10, repeat: Infinity, ease: 'easeInOut' }}
           className="pointer-events-none absolute -left-10 bottom-4 h-16 w-24 rounded-[999px] border border-white/8"
         />
 

@@ -8,7 +8,6 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useBirthdayFlow } from './composables/useBirthdayFlow';
 import { useBackgroundAudio } from './composables/useBackgroundAudio';
 import { birthdayContent } from './data/content';
-import { getPublicAssetPath } from './lib/assetPaths';
 import { IntroOverlay } from './components/IntroOverlay';
 import { TitleMessage } from './components/TitleMessage';
 import { MainBlessing } from './components/MainBlessing';
@@ -118,7 +117,7 @@ class SceneErrorBoundary extends React.Component<
 
 export default function App() {
   const activeSteps = React.useMemo<BirthdayStep[]>(() => {
-    const activeMemorySteps = MEMORY_STEPS.slice(0, birthdayContent.memorySequence.length);
+    const activeMemorySteps = MEMORY_STEPS.slice(0, birthdayContent.story.memories.length);
 
     return [
       'ready',
@@ -137,9 +136,9 @@ export default function App() {
   }, []);
 
   const memoryAutoAdvanceDelays = React.useMemo<Partial<Record<BirthdayStep, number>>>(() => {
-    const activeMemorySteps = MEMORY_STEPS.slice(0, birthdayContent.memorySequence.length);
+    const activeMemorySteps = MEMORY_STEPS.slice(0, birthdayContent.story.memories.length);
 
-    return birthdayContent.memorySequence.reduce<Partial<Record<BirthdayStep, number>>>(
+    return birthdayContent.story.memories.reduce<Partial<Record<BirthdayStep, number>>>(
       (delays, memoryMoment, index) => {
         const memoryStep = activeMemorySteps[index];
         if (!memoryStep || !memoryMoment.pauseMs) {
@@ -210,7 +209,7 @@ export default function App() {
   }, [backgroundAudio, openGift]);
 
   return (
-    <main className="relative min-h-[100dvh] overflow-hidden bg-[#05050A] font-sans text-[#F8F4EE] selection:bg-[#C5A059]/30">
+    <main className="relative min-h-[100svh] min-h-[100dvh] overflow-x-hidden bg-[#05050A] font-sans text-[#F8F4EE] selection:bg-[#C5A059]/30">
       {/* Custom Ethereal Cursor */}
       <motion.div 
         className="fixed top-0 left-0 w-6 h-6 rounded-full border border-[#C5A059]/30 pointer-events-none z-[9999] hidden sm:block"
@@ -270,25 +269,25 @@ export default function App() {
       )}
 
       {/* UI Layer */}
-      <section className="relative z-10 min-h-[100dvh] flex flex-col items-center justify-center gap-6 px-6 py-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.75rem,env(safe-area-inset-bottom))] pointer-events-none">
+      <section className="relative z-10 flex min-h-[100svh] min-h-[100dvh] w-full flex-col items-center justify-center gap-6 overflow-y-auto px-6 py-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.75rem,env(safe-area-inset-bottom))] pointer-events-none">
         <AnimatePresence mode="wait">
           {isReadableExperience ? (
             <motion.div 
               key="readable-content"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="mx-auto flex max-h-[100dvh] w-full max-w-4xl flex-col items-start gap-24 overflow-y-auto px-2 py-16 pointer-events-auto sm:px-16 sm:py-24"
+              className="mx-auto flex w-full max-w-4xl flex-col items-start gap-20 px-2 py-12 pointer-events-auto sm:px-16 sm:py-20"
             >
-              <IntroOverlay text={birthdayContent.intro.message} mode="inline" />
-              <IntroOverlay text={birthdayContent.before.text} mode="inline" />
+              <IntroOverlay text={birthdayContent.opening.introText} mode="inline" />
+              <IntroOverlay text={birthdayContent.story.before.text} mode="inline" />
               <MemoryNote
-                text={birthdayContent.us.text}
-                image={birthdayContent.us.image}
-                imageAlt={birthdayContent.us.imageAlt}
+                text={birthdayContent.story.us.text}
+                image={birthdayContent.story.us.image}
+                imageAlt={birthdayContent.story.us.imageAlt}
                 imageLoading="eager"
                 imageFetchPriority="high"
               />
-              {birthdayContent.memorySequence.map((memoryMoment, index) => (
+              {birthdayContent.story.memories.map((memoryMoment, index) => (
                 <MemoryNote
                   key={memoryMoment.id}
                   text={memoryMoment.caption}
@@ -300,28 +299,25 @@ export default function App() {
                   imageFetchPriority={index === 0 ? 'high' : 'low'}
                 />
               ))}
-              <IntroOverlay text={birthdayContent.afterMemory.text} mode="inline" />
+              <IntroOverlay text={birthdayContent.story.after.text} mode="inline" />
               <TitleMessage
-                title={birthdayContent.thirtiethBirthday.title}
-                subtitle={birthdayContent.thirtiethBirthday.subtitle}
+                title={birthdayContent.blessing.title}
+                subtitle={birthdayContent.blessing.subtitle}
               />
-              <MainBlessing message={birthdayContent.thirtiethBirthday.reflection} />
-              <MainBlessing message={birthdayContent.thirtiethBirthday.wish} />
-              <FinalWish text={birthdayContent.finalBlessing.text} />
+              <MainBlessing message={birthdayContent.blessing.reflection} />
+              <MainBlessing message={birthdayContent.blessing.wish} />
+              <FinalWish text={birthdayContent.closing.text} />
             </motion.div>
           ) : (
             <>
-          {['cosmic-core', 'timeline-expand'].includes(step) && birthdayContent.giftPrompt.transition && (
-            <IntroOverlay key="transition" text={birthdayContent.giftPrompt.transition} />
+          {['cosmic-core', 'timeline-expand'].includes(step) && birthdayContent.opening.giftPrompt.transition && (
+            <IntroOverlay key="transition" text={birthdayContent.opening.giftPrompt.transition} />
           )}
 
           {(step === 'ready' || step === 'opening') && (
             <div key="ready-stage" className="pointer-events-auto">
               <OpeningStage
-                message={birthdayContent.intro.message}
-                hint={birthdayContent.giftPrompt.hint}
-                photo={getPublicAssetPath('photos/rita.jpg')}
-                photoAlt="A portrait of Rita"
+                content={birthdayContent.opening}
                 stageOverride={step === 'opening' ? 'revealed' : undefined}
                 onOpen={handleOpenGift}
               />
@@ -329,22 +325,22 @@ export default function App() {
           )}
 
           {step === 'node-before' && (
-            <IntroOverlay key="node-before" text={birthdayContent.before.text} />
+            <IntroOverlay key="node-before" text={birthdayContent.story.before.text} />
           )}
 
           {step === 'node-us' && (
             <div key="node-us" className="pointer-events-auto">
               <MemoryNote
-                text={birthdayContent.us.text}
-                image={birthdayContent.us.image}
-                imageAlt={birthdayContent.us.imageAlt}
+                text={birthdayContent.story.us.text}
+                image={birthdayContent.story.us.image}
+                imageAlt={birthdayContent.story.us.imageAlt}
                 imageLoading="eager"
                 imageFetchPriority="high"
               />
             </div>
           )}
 
-          {birthdayContent.memorySequence.map((memoryMoment, index) => {
+          {birthdayContent.story.memories.map((memoryMoment, index) => {
             const memoryStep = MEMORY_STEPS[index];
             if (step !== memoryStep) {
               return null;
@@ -366,33 +362,33 @@ export default function App() {
           })}
 
           {step === 'node-now' && (
-            <IntroOverlay key="node-now" text={birthdayContent.afterMemory.text} />
+            <IntroOverlay key="node-now" text={birthdayContent.story.after.text} />
           )}
 
           {step === 'title' && (
             <div key="title" className="pointer-events-auto">
               <TitleMessage
-                title={birthdayContent.thirtiethBirthday.title}
-                subtitle={birthdayContent.thirtiethBirthday.subtitle}
+                title={birthdayContent.blessing.title}
+                subtitle={birthdayContent.blessing.subtitle}
               />
             </div>
           )}
 
           {step === 'message' && (
             <div key="message" className="pointer-events-auto">
-              <MainBlessing message={birthdayContent.thirtiethBirthday.reflection} />
+              <MainBlessing message={birthdayContent.blessing.reflection} />
             </div>
           )}
           
           {step === 'message2' && (
             <div key="message2" className="pointer-events-auto">
-              <MainBlessing message={birthdayContent.thirtiethBirthday.wish} />
+              <MainBlessing message={birthdayContent.blessing.wish} />
             </div>
           )}
 
           {step === 'final' && (
             <div key="final" className="pointer-events-auto">
-              <FinalWish text={birthdayContent.finalBlessing.text} />
+              <FinalWish text={birthdayContent.closing.text} />
             </div>
           )}
 
@@ -413,7 +409,7 @@ export default function App() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {backgroundAudio.isAvailable && backgroundAudio.hasStarted && (
+        {backgroundAudio.isAvailable && backgroundAudio.hasStarted && !TRANSITION_ONLY_STEPS.has(step) && (
           <MusicToggle
             isMuted={backgroundAudio.isMuted}
             onToggle={backgroundAudio.toggleMuted}
@@ -426,23 +422,24 @@ export default function App() {
 }
 
 const OpeningStage = React.memo(function OpeningStage({
-  message,
-  hint,
-  photo,
-  photoAlt,
+  content,
   stageOverride,
   onOpen,
 }: {
-  message: string;
-  hint: string;
-  photo: string;
-  photoAlt: string;
+  content: typeof birthdayContent.opening;
   stageOverride?: 'revealed';
   onOpen: () => void;
 }) {
   const [authStage, setAuthStage] = React.useState<'idle' | 'scanning' | 'revealed'>('idle');
   const openTimerRef = React.useRef<number | null>(null);
+  const [displayPhoto, setDisplayPhoto] = React.useState(content.featuredPhoto.image);
+  const [isPhotoLoaded, setIsPhotoLoaded] = React.useState(false);
   const currentStage = stageOverride ?? authStage;
+
+  React.useEffect(() => {
+    setDisplayPhoto(content.featuredPhoto.image);
+    setIsPhotoLoaded(false);
+  }, [content.featuredPhoto.image]);
 
   React.useEffect(() => {
     return () => {
@@ -482,16 +479,16 @@ const OpeningStage = React.memo(function OpeningStage({
         </div>
         <div className="flex flex-col gap-2">
           <span className="text-[0.64rem] uppercase tracking-[0.32em] text-[#C5A059]/82">
-            A small card for you
+            {content.cardEyebrow}
           </span>
           <h1 className="m-0 text-[clamp(1.6rem,7vw,2.2rem)] font-light italic font-serif tracking-[-0.02em] text-[#F8F4EE]">
-            Happy 30th Birthday
+            {content.cardTitle}
           </h1>
         </div>
       </div>
 
       <p className="m-0 whitespace-pre-line text-[clamp(1rem,4.2vw,1.08rem)] leading-[1.9] font-light italic font-serif tracking-[0.03em] text-[#F8F4EE]/92">
-        {message}
+        {content.introText}
       </p>
 
       <div className="h-px w-full bg-gradient-to-r from-[#C5A059]/30 via-white/10 to-transparent" />
@@ -507,7 +504,7 @@ const OpeningStage = React.memo(function OpeningStage({
           <div className="pointer-events-none absolute left-1/2 top-3 z-[3] h-1 w-16 -translate-x-1/2 rounded-full bg-white/30" />
           <div className="relative aspect-[4/5] overflow-hidden rounded-[1.35rem] border border-white/10 bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.14),rgba(255,255,255,0.03)_48%,rgba(0,0,0,0.08)_100%)]">
             <motion.img
-              src={photo}
+              src={displayPhoto}
               alt=""
               aria-hidden="true"
               initial={false}
@@ -518,11 +515,23 @@ const OpeningStage = React.memo(function OpeningStage({
               }
               transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
               className="absolute inset-0 h-full w-full object-cover"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
             />
 
             <motion.img
-              src={photo}
-              alt={photoAlt}
+              src={displayPhoto}
+              alt={content.featuredPhoto.imageAlt}
+              onLoad={() => setIsPhotoLoaded(true)}
+              onError={() => {
+                if (displayPhoto !== birthdayContent.story.us.image) {
+                  setDisplayPhoto(birthdayContent.story.us.image);
+                  return;
+                }
+
+                setIsPhotoLoaded(true);
+              }}
               initial={false}
               animate={
                 currentStage === 'revealed'
@@ -531,6 +540,16 @@ const OpeningStage = React.memo(function OpeningStage({
               }
               transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
               className="relative z-[1] h-full w-full object-contain px-2 pt-2"
+              loading="eager"
+              fetchPriority="high"
+              decoding="sync"
+            />
+
+            <motion.div
+              initial={false}
+              animate={{ opacity: isPhotoLoaded ? 0 : 1 }}
+              transition={{ duration: 0.35 }}
+              className="pointer-events-none absolute inset-0 z-[2] rounded-[1.35rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))]"
             />
 
             <motion.div
@@ -577,10 +596,14 @@ const OpeningStage = React.memo(function OpeningStage({
             <div className="rounded-[1rem] border border-white/14 bg-[linear-gradient(180deg,rgba(8,8,12,0.68),rgba(8,8,12,0.52))] px-3.5 py-2.5 shadow-[0_10px_24px_rgba(0,0,0,0.24)] backdrop-blur-md">
                 <div className="flex flex-col gap-1">
                   <span className="text-[0.6rem] uppercase tracking-[0.28em] text-[#E4C27E]">
-                    {currentStage === 'revealed' ? 'Only yours' : 'My Rita'}
+                    {currentStage === 'revealed'
+                      ? content.photoUnlockedEyebrow
+                      : content.photoLockedEyebrow}
                   </span>
                   <span className="text-[0.98rem] font-light italic font-serif tracking-[0.01em] text-[#FFF8EE]">
-                    {currentStage === 'revealed' ? 'Kept close, for you.' : 'A little birthday card I made for you'}
+                    {currentStage === 'revealed'
+                      ? content.photoUnlockedText
+                      : content.photoLockedText}
                   </span>
                 </div>
               </div>
@@ -592,7 +615,7 @@ const OpeningStage = React.memo(function OpeningStage({
           onClick={handleAuthenticate}
           disabled={currentStage !== 'idle'}
           whileTap={currentStage === 'idle' ? { scale: 0.985 } : undefined}
-          className="flex min-h-15 w-full items-center gap-4 rounded-[1.2rem] border border-[#C5A059]/24 bg-[linear-gradient(180deg,rgba(248,244,238,0.08),rgba(248,244,238,0.04))] px-5 py-4 text-left shadow-[0_14px_40px_rgba(0,0,0,0.22)] transition-colors duration-300 hover:bg-[#F8F4EE]/[0.08] disabled:cursor-default"
+          className="flex min-h-[3.75rem] w-full items-center gap-4 rounded-[1.2rem] border border-[#C5A059]/24 bg-[linear-gradient(180deg,rgba(248,244,238,0.08),rgba(248,244,238,0.04))] px-5 py-4 text-left shadow-[0_14px_40px_rgba(0,0,0,0.22)] transition-colors duration-300 hover:bg-[#F8F4EE]/[0.08] disabled:cursor-default"
           aria-label={birthdayContent.ui.openGiftAriaLabel}
         >
           <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-[1rem] border border-[#C5A059]/16 bg-black/20">
@@ -667,17 +690,17 @@ const OpeningStage = React.memo(function OpeningStage({
           <div className="flex flex-col gap-1">
             <span className="text-[0.72rem] uppercase tracking-[0.24em] text-[#C5A059]/86">
               {currentStage === 'idle'
-                ? 'Face ID'
+                ? content.faceIdIdleEyebrow
                 : currentStage === 'scanning'
-                  ? 'Scanning'
-                  : 'Welcome, Rita'}
+                  ? content.faceIdScanningEyebrow
+                  : content.faceIdUnlockedEyebrow}
             </span>
             <span className="text-[1rem] font-light italic font-serif text-[#F8F4EE]">
               {currentStage === 'idle'
-                ? 'Look here to open your card'
+                ? content.faceIdIdleText
                 : currentStage === 'scanning'
-                  ? 'Gently opening your card'
-                  : 'Opening your card'}
+                  ? content.faceIdScanningText
+                  : content.faceIdUnlockedText}
             </span>
           </div>
         </motion.button>

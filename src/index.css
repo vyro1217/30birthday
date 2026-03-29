@@ -19,7 +19,7 @@ body {
 
 html,
 #root {
-  min-height: 100dvh;
+  min-height: 100%;
 }
 
 html {
@@ -29,8 +29,9 @@ html {
 }
 
 body {
+  min-height: 100svh;
   min-height: 100dvh;
-  overscroll-behavior-y: none;
+  overscroll-behavior-y: contain;
   text-rendering: optimizeLegibility;
 }
 
