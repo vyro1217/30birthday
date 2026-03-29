@@ -1,0 +1,15 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#05050A"/>
+  <rect x="56" y="56" width="1088" height="518" rx="36" fill="url(#paint0_radial)" stroke="rgba(255,255,255,0.10)"/>
+  <rect x="470" y="152" width="260" height="188" rx="26" fill="rgba(255,255,255,0.03)" stroke="rgba(197,160,89,0.35)"/>
+  <rect x="510" y="116" width="180" height="76" rx="22" fill="rgba(255,255,255,0.05)" stroke="rgba(197,160,89,0.45)"/>
+  <rect x="511" y="194" width="178" height="2" fill="rgba(197,160,89,0.45)"/>
+  <text x="600" y="420" text-anchor="middle" fill="#F8F4EE" font-family="Georgia, serif" font-size="56" font-style="italic">Happy 30th Birthday</text>
+  <text x="600" y="476" text-anchor="middle" fill="rgba(197,160,89,0.88)" font-family="Arial, sans-serif" font-size="22" letter-spacing="6">A SMALL NOTE FOR YOUR BIRTHDAY</text>
+  <defs>
+    <radialGradient id="paint0_radial" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(330 160) rotate(28.801) scale(830.365 654.98)">
+      <stop stop-color="#1A1625"/>
+      <stop offset="1" stop-color="#05050A"/>
+    </radialGradient>
+  </defs>
+</svg>
