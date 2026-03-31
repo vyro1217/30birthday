@@ -98,6 +98,19 @@ export function useBirthdayFlow(
     setStep('opening');
   }, [step]);
 
+  const goToStep = useCallback(
+    (targetStep: BirthdayStep) => {
+      if (!steps.includes(targetStep)) {
+        return;
+      }
+
+      setAutoAdvanceBlockedForStep(null);
+      setStep(targetStep);
+      clearTimers();
+    },
+    [clearTimers, steps],
+  );
+
   useEffect(() => {
     if (autoAdvanceBlockedForStep && autoAdvanceBlockedForStep !== step) {
       setAutoAdvanceBlockedForStep(null);
@@ -132,5 +145,6 @@ export function useBirthdayFlow(
     continueStep,
     prevStep,
     openGift,
-  }), [step, nextStep, continueStep, prevStep, openGift]);
+    goToStep,
+  }), [step, nextStep, continueStep, prevStep, openGift, goToStep]);
 }

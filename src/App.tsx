@@ -255,7 +255,7 @@ export default function App() {
     );
   }, []);
 
-  const { step, openGift, prevStep, nextStep, continueStep } = useBirthdayFlow(
+  const { step, openGift, prevStep, nextStep, continueStep, goToStep } = useBirthdayFlow(
     activeSteps,
     memoryAutoAdvanceDelays,
     'ready',
@@ -310,7 +310,9 @@ export default function App() {
   const showNavigation = !TRANSITION_ONLY_STEPS.has(step) && step !== 'ready' && step !== 'story-gift';
   const showMusicToggle =
     backgroundAudio.isAvailable && backgroundAudio.hasStarted && !TRANSITION_ONLY_STEPS.has(step);
-  const isSceneInteractive = sceneMode === 'gift-opening' && step === 'story-gift';
+  const isSceneInteractive =
+    (sceneMode === 'gift-opening' && step === 'story-gift') ||
+    (sceneMode === 'closing-gift' && step === 'closing-gift');
   const isNarrowViewport = viewport.width > 0 && viewport.width <= 390;
   const isVeryNarrowViewport = viewport.width > 0 && viewport.width <= 360;
   const isCompactViewport = (viewport.height > 0 && viewport.height <= 760) || isNarrowViewport;
@@ -411,6 +413,16 @@ export default function App() {
     [handleStoryGiftOpen, isSimpleGiftInteraction, isStoryGiftOpening, step],
   );
 
+  const handleReopenFromClosing = React.useCallback(() => {
+    if (step !== 'closing-gift') {
+      return;
+    }
+
+    setIsStoryGiftOpening(false);
+    setStoryGiftPullDistance(0);
+    goToStep('opening-bridge');
+  }, [goToStep, step]);
+
   useEffect(() => {
     if (step !== 'story-gift' && isStoryGiftOpening) {
       setIsStoryGiftOpening(false);
@@ -496,6 +508,7 @@ export default function App() {
                 storyGiftPullProgress={Math.min(storyGiftPullDistance / 148, 1)}
                 onStoryGiftPullChange={handleStoryGiftPullChange}
                 onStoryGiftPullEnd={handleStoryGiftPullEnd}
+                onClosingGiftOpen={handleReopenFromClosing}
               />
             </Suspense>
           </SceneErrorBoundary>
@@ -744,7 +757,11 @@ export default function App() {
           {step === 'closing-gift' && (
             <StageFrame key="closing-gift" availableHeight={stageHeight} contentClassName="flex h-full items-center justify-center">
               <div className="pointer-events-auto">
-                <ClosingGiftStage compact={compactCards} veryCompact={isVeryCompactViewport} />
+                <ClosingGiftStage
+                  compact={compactCards}
+                  veryCompact={isVeryCompactViewport}
+                  onReopenGift={handleReopenFromClosing}
+                />
               </div>
             </StageFrame>
           )}
@@ -1797,9 +1814,11 @@ const GiftCubeVisual = React.memo(function GiftCubeVisual({
 const ClosingGiftStage = React.memo(function ClosingGiftStage({
   compact,
   veryCompact,
+  onReopenGift,
 }: {
   compact: boolean;
   veryCompact: boolean;
+  onReopenGift: () => void;
 }) {
   const [showEnding, setShowEnding] = React.useState(false);
 
@@ -1846,6 +1865,16 @@ const ClosingGiftStage = React.memo(function ClosingGiftStage({
                   always
                 </span>
               </div>
+              <p className={`m-0 text-[#F8F4EE]/66 ${veryCompact ? 'text-[0.56rem]' : compact ? 'text-[0.6rem]' : 'text-[0.64rem]'} uppercase tracking-[0.2em]`}>
+                Drag gift box to rotate
+              </p>
+              <button
+                type="button"
+                onClick={onReopenGift}
+                className={`pointer-events-auto rounded-full border border-[#E6C98A]/38 bg-black/35 text-[#FFF4F6] transition hover:border-[#E6C98A]/60 hover:bg-black/45 ${veryCompact ? 'px-3 py-1.5 text-[0.56rem]' : compact ? 'px-3.5 py-1.5 text-[0.58rem]' : 'px-4 py-2 text-[0.62rem]'} uppercase tracking-[0.2em]`}
+              >
+                Open Again
+              </button>
             </motion.div>
           )}
         </AnimatePresence>

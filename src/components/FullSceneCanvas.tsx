@@ -22,6 +22,7 @@ interface FullSceneCanvasProps {
   storyGiftPullProgress?: number;
   onStoryGiftPullChange?: (distance: number) => void;
   onStoryGiftPullEnd?: (distance: number) => void;
+  onClosingGiftOpen?: () => void;
 }
 
 function CanvasPlaybackController({
@@ -73,6 +74,7 @@ export const FullSceneCanvas = React.memo(function FullSceneCanvas({
   storyGiftPullProgress = 0,
   onStoryGiftPullChange,
   onStoryGiftPullEnd,
+  onClosingGiftOpen,
 }: FullSceneCanvasProps) {
   return (
     <Canvas
@@ -108,6 +110,7 @@ export const FullSceneCanvas = React.memo(function FullSceneCanvas({
           storyGiftPullProgress={storyGiftPullProgress}
           onStoryGiftPullChange={onStoryGiftPullChange}
           onStoryGiftPullEnd={onStoryGiftPullEnd}
+          onClosingGiftOpen={onClosingGiftOpen}
         />
       </Suspense>
     </Canvas>

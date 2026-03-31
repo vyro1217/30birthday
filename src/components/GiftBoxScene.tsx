@@ -21,6 +21,7 @@ interface GiftBoxProps {
   storyGiftPullProgress?: number;
   onStoryGiftPullChange?: (distance: number) => void;
   onStoryGiftPullEnd?: (distance: number) => void;
+  onClosingGiftOpen?: () => void;
 }
 
 export const GiftBoxScene = memo(function GiftBoxScene({
@@ -31,6 +32,7 @@ export const GiftBoxScene = memo(function GiftBoxScene({
   storyGiftPullProgress = 0,
   onStoryGiftPullChange,
   onStoryGiftPullEnd,
+  onClosingGiftOpen,
 }: GiftBoxProps) {
   const { camera } = useThree();
   const isMobileViewport = typeof window !== 'undefined' && window.innerWidth < 768;
@@ -45,11 +47,21 @@ export const GiftBoxScene = memo(function GiftBoxScene({
   const storyGiftGlowRef = useRef<THREE.PointLight>(null);
   const storyGiftPullVisualRef = useRef(0);
   const detachStoryGiftListenersRef = useRef<(() => void) | null>(null);
+  const detachClosingGiftListenersRef = useRef<(() => void) | null>(null);
+  const closingGiftRotationYRef = useRef(0.35);
+  const closingGiftSpinVelocityRef = useRef(0);
   const storyGiftPullStateRef = useRef({
     active: false,
     startClientY: 0,
     distance: 0,
     pointerId: -1,
+  });
+  const closingGiftDragStateRef = useRef({
+    active: false,
+    pointerId: -1,
+    startClientX: 0,
+    lastClientX: 0,
+    totalDragDistance: 0,
   });
 
   // Memoize static arrays to prevent re-renders
@@ -126,6 +138,29 @@ export const GiftBoxScene = memo(function GiftBoxScene({
         groupRef.current.rotation.y = 0;
         groupRef.current.rotation.x = 0;
         boxGroupRef.current.rotation.y = THREE.MathUtils.lerp(boxGroupRef.current.rotation.y, 0, 0.18);
+      }
+
+      if (step === 'closing-gift' && boxGroupRef.current) {
+        const dragState = closingGiftDragStateRef.current;
+        if (!dragState.active) {
+          closingGiftSpinVelocityRef.current *= 0.92;
+          if (Math.abs(closingGiftSpinVelocityRef.current) < 0.0001) {
+            closingGiftSpinVelocityRef.current = 0;
+          }
+          const easedTarget = 0.35 + closingGiftSpinVelocityRef.current * 18;
+          closingGiftRotationYRef.current = THREE.MathUtils.lerp(
+            closingGiftRotationYRef.current,
+            easedTarget,
+            0.08,
+          );
+        }
+
+        closingGiftRotationYRef.current = THREE.MathUtils.clamp(closingGiftRotationYRef.current, -1.15, 1.55);
+        boxGroupRef.current.rotation.y = THREE.MathUtils.lerp(
+          boxGroupRef.current.rotation.y,
+          closingGiftRotationYRef.current,
+          dragState.active ? 0.32 : 0.14,
+        );
       }
 
       if (step === 'story-gift' && insertCardRef.current && lidGroupRef.current && boxGroupRef.current) {
@@ -242,11 +277,104 @@ export const GiftBoxScene = memo(function GiftBoxScene({
     }, 40);
   };
 
+  const finishClosingGiftDrag = (allowTap = true) => {
+    const dragState = closingGiftDragStateRef.current;
+    if (!dragState.active) {
+      return;
+    }
+
+    detachClosingGiftListenersRef.current?.();
+    detachClosingGiftListenersRef.current = null;
+
+    const shouldTriggerOpen = allowTap && dragState.totalDragDistance < 10;
+    dragState.active = false;
+    dragState.pointerId = -1;
+    dragState.totalDragDistance = 0;
+
+    if (shouldTriggerOpen) {
+      onClosingGiftOpen?.();
+    }
+  };
+
+  const handleClosingGiftPointerDown = (event: ThreeEvent<PointerEvent>) => {
+    if (step !== 'closing-gift') {
+      return;
+    }
+
+    event.stopPropagation();
+    const pointerId = event.pointerId;
+    const dragState = closingGiftDragStateRef.current;
+    dragState.active = true;
+    dragState.pointerId = pointerId;
+    dragState.startClientX = event.clientX;
+    dragState.lastClientX = event.clientX;
+    dragState.totalDragDistance = 0;
+    closingGiftSpinVelocityRef.current = 0;
+
+    const handleWindowPointerMove = (moveEvent: PointerEvent) => {
+      if (moveEvent.pointerId !== pointerId || !closingGiftDragStateRef.current.active) {
+        return;
+      }
+
+      const deltaX = moveEvent.clientX - closingGiftDragStateRef.current.lastClientX;
+      closingGiftDragStateRef.current.lastClientX = moveEvent.clientX;
+      closingGiftDragStateRef.current.totalDragDistance += Math.abs(deltaX);
+
+      const deltaRotation = deltaX * 0.012;
+      closingGiftRotationYRef.current = THREE.MathUtils.clamp(
+        closingGiftRotationYRef.current + deltaRotation,
+        -1.15,
+        1.55,
+      );
+      closingGiftSpinVelocityRef.current = THREE.MathUtils.clamp(deltaRotation, -0.03, 0.03);
+    };
+
+    const handleWindowPointerUp = (upEvent: PointerEvent) => {
+      if (upEvent.pointerId !== pointerId) {
+        return;
+      }
+
+      finishClosingGiftDrag(true);
+    };
+
+    window.addEventListener('pointermove', handleWindowPointerMove, { passive: true });
+    window.addEventListener('pointerup', handleWindowPointerUp, { passive: true });
+    window.addEventListener('pointercancel', handleWindowPointerUp, { passive: true });
+    detachClosingGiftListenersRef.current = () => {
+      window.removeEventListener('pointermove', handleWindowPointerMove);
+      window.removeEventListener('pointerup', handleWindowPointerUp);
+      window.removeEventListener('pointercancel', handleWindowPointerUp);
+    };
+  };
+
+  const handleClosingGiftPointerUp = (event: ThreeEvent<PointerEvent>) => {
+    if (closingGiftDragStateRef.current.pointerId !== event.pointerId) {
+      return;
+    }
+
+    event.stopPropagation();
+    finishClosingGiftDrag(true);
+  };
+
   useEffect(() => {
     return () => {
       detachStoryGiftListenersRef.current?.();
+      detachClosingGiftListenersRef.current?.();
     };
   }, []);
+
+  useEffect(() => {
+    if (step !== 'closing-gift' && closingGiftDragStateRef.current.active) {
+      finishClosingGiftDrag(false);
+    }
+  }, [step]);
+
+  useEffect(() => {
+    if (step === 'closing-gift') {
+      closingGiftRotationYRef.current = 0.35;
+      closingGiftSpinVelocityRef.current = 0;
+    }
+  }, [step]);
 
   useEffect(() => {
     const isBridgeStep = step === 'opening-bridge';
@@ -823,6 +951,21 @@ export const GiftBoxScene = memo(function GiftBoxScene({
                   }}
                 >
                   <boxGeometry args={[2, 1.1, 1.92]} />
+                  <meshBasicMaterial transparent opacity={0} />
+                </mesh>
+              )}
+
+              {step === 'closing-gift' && (
+                <mesh
+                  position={[0, 0.2, 0]}
+                  onPointerDown={handleClosingGiftPointerDown}
+                  onPointerUp={handleClosingGiftPointerUp}
+                  onPointerCancel={handleClosingGiftPointerUp}
+                  onPointerMissed={() => {
+                    finishClosingGiftDrag(false);
+                  }}
+                >
+                  <boxGeometry args={[2.45, 2.35, 2.4]} />
                   <meshBasicMaterial transparent opacity={0} />
                 </mesh>
               )}
