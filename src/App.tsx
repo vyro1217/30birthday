@@ -564,32 +564,27 @@ export default function App() {
 
           {step === 'node-before' && (
             <StageFrame key="node-before" availableHeight={stageHeight}>
-              <ReadingStageShell
+              <TimelineNodeShell
                 compact={compactCards}
                 veryCompact={isVeryCompactViewport}
-                eyebrow="A gentle note"
-                title="Thirty feels so gentle on you."
-                note="A quiet page before the rest."
+                progress="1 / 8"
               >
                 <IntroOverlay mode="inline" text={birthdayContent.story.before.text} variant="from-box" compact={compactCards} veryCompact={isVeryCompactViewport} />
-              </ReadingStageShell>
+              </TimelineNodeShell>
             </StageFrame>
           )}
 
           {step === 'node-us' && (
             <StageFrame key="node-us" availableHeight={stageHeight}>
-              <StoryAlbumStage
+              <TimelineNodeShell
                 compact={compactCards}
                 veryCompact={isVeryCompactViewport}
-                page={1}
-                total={storyPhotoTotal}
-                eyebrow="For us, softly"
-                title="Whenever I think of us, I start here."
-                note="One of my favorite places to begin."
+                progress="2 / 8"
               >
                 <MemoryNote
                   compact={compactCards}
                   veryCompact={isVeryCompactViewport}
+                  styleVariant="timeline"
                   pageTurnDirection="forward"
                   text={birthdayContent.story.us.text}
                   image={birthdayContent.story.us.image}
@@ -598,7 +593,7 @@ export default function App() {
                   imageLoading="eager"
                   imageFetchPriority="high"
                 />
-              </StoryAlbumStage>
+              </TimelineNodeShell>
             </StageFrame>
           )}
 
@@ -610,27 +605,16 @@ export default function App() {
 
             return (
               <StageFrame key={memoryMoment.id} availableHeight={stageHeight}>
-                <StoryAlbumStage
+                <TimelineNodeShell
                   compact={compactCards}
                   veryCompact={isVeryCompactViewport}
-                  page={index + 2}
-                  total={storyPhotoTotal}
-                  eyebrow={index === birthdayContent.story.memories.length - 2 ? 'one more page' : undefined}
-                  title={
-                    index === 0
-                      ? 'Simple nights like this are still my favorite to keep.'
-                      : index === 1
-                        ? 'This still feels like my favorite version of us.'
-                        : index === 2
-                          ? 'You looked so steady here, and I was really proud of you.'
-                          : index === 3
-                            ? 'Still us, moving through life side by side.'
-                            : 'One more loud night, and still the two of us.'
-                  }
+                  progress={`${index + 3} / 8`}
+                  isMinor={true}
                 >
                   <MemoryNote
                     compact={compactCards}
                     veryCompact={isVeryCompactViewport}
+                    styleVariant="timeline"
                     pageTurnDirection="forward"
                     text={memoryMoment.caption}
                     image={memoryMoment.image}
@@ -643,20 +627,22 @@ export default function App() {
                     imageLoading={index <= 1 ? 'eager' : 'lazy'}
                     imageFetchPriority={index <= 1 ? 'high' : 'low'}
                   />
-                </StoryAlbumStage>
+                </TimelineNodeShell>
               </StageFrame>
             );
           })}
 
           {step === 'node-now' && (
             <StageFrame key="node-now" availableHeight={stageHeight}>
-              <ReadingStageShell
+              <TimelineNodeShell
                 compact={compactCards}
                 veryCompact={isVeryCompactViewport}
+                progress="8 / 8"
               >
                 <MemoryNote
                   compact={compactCards}
                   veryCompact={isVeryCompactViewport}
+                  styleVariant="timeline"
                   pageTurnDirection="forward"
                   text={birthdayContent.story.after.text}
                   image={birthdayContent.story.after.image}
@@ -665,7 +651,7 @@ export default function App() {
                   imageLoading="lazy"
                   imageFetchPriority="low"
                 />
-              </ReadingStageShell>
+              </TimelineNodeShell>
             </StageFrame>
           )}
 
@@ -683,7 +669,14 @@ export default function App() {
 
           {step === 'title' && (
             <StageFrame key="title" availableHeight={stageHeight}>
-              <div className="pointer-events-auto">
+              <ClosingStageShell
+                compact={compactCards}
+                veryCompact={isVeryCompactViewport}
+                progress="1 / 4"
+                converging={true}
+                convergenceStep={1}
+                convergenceTotal={4}
+              >
                 <TitleMessage
                   compact={compactCards}
                   veryCompact={isVeryCompactViewport}
@@ -691,7 +684,7 @@ export default function App() {
                   subtitle={birthdayContent.blessing.subtitle}
                   variant="box-bottom"
                 />
-              </div>
+              </ClosingStageShell>
             </StageFrame>
           )}
 
@@ -700,9 +693,10 @@ export default function App() {
               <ClosingStageShell
                 compact={compactCards}
                 veryCompact={isVeryCompactViewport}
-                eyebrow="A little love for you"
-                title="The part I wanted you to keep close."
-                progress="1 / 3"
+                progress="2 / 4"
+                converging={true}
+                convergenceStep={2}
+                convergenceTotal={4}
               >
                 <MainBlessing compact={compactCards} veryCompact={isVeryCompactViewport} message={birthdayContent.blessing.reflection} variant="box-bottom" />
               </ClosingStageShell>
@@ -714,7 +708,10 @@ export default function App() {
               <ClosingStageShell
                 compact={compactCards}
                 veryCompact={isVeryCompactViewport}
-                progress="2 / 3"
+                progress="3 / 4"
+                converging={true}
+                convergenceStep={3}
+                convergenceTotal={4}
               >
                 <MainBlessing compact={compactCards} veryCompact={isVeryCompactViewport} message={birthdayContent.blessing.wish} variant="box-bottom" />
               </ClosingStageShell>
@@ -726,8 +723,11 @@ export default function App() {
               <ClosingStageShell
                 compact={compactCards}
                 veryCompact={isVeryCompactViewport}
-                eyebrow="with love"
-                progress="3 / 3"
+                progress="4 / 4"
+                converging={true}
+                convergenceStep={4}
+                convergenceTotal={4}
+                finale={true}
               >
                 <FinalWish
                   compact={compactCards}
@@ -956,7 +956,7 @@ const OpeningStage = React.memo(function OpeningStage({
                     <span className={`h-1.5 w-1.5 rounded-full transition-colors duration-300 ${authState === 'revealed' ? 'bg-[#E6C98A]/96' : 'bg-white/18'}`} />
                   </div>
                   <span className="whitespace-nowrap text-[0.52rem] font-medium tracking-[0.16em] text-white/74">
-                    {authState === 'idle' ? 'Take your time' : authState === 'scanning' ? 'Opening gently' : 'For you'}
+                    {authState === 'idle' ? 'Tap to open' : authState === 'scanning' ? 'Opening this for you' : 'Almost there'}
                   </span>
                 </motion.div>
               </div>
@@ -964,14 +964,14 @@ const OpeningStage = React.memo(function OpeningStage({
             </div>
             <div className={`mt-3 flex flex-col items-center gap-1.5 text-center ${veryCompact ? 'px-1 py-1' : 'px-2 py-1.5'}`}>
               <p className="m-0 text-[0.68rem] uppercase tracking-[0.22em] text-white/42">
-                {authState === 'idle' ? 'For you' : authState === 'scanning' ? 'Opening gently' : 'Ready for you'}
+                {authState === 'idle' ? 'A gift for you' : authState === 'scanning' ? 'With my own hands' : 'Come in softly'}
               </p>
               <p className="m-0 text-[0.78rem] leading-[1.5] text-[#F8F4EE]/72">
                 {authState === 'idle'
-                  ? 'I prepared a little something just for you.'
+                  ? 'Open this gift first.'
                   : authState === 'scanning'
-                    ? 'Let me open it gently for you.'
-                    : 'The first note is already waiting inside.'}
+                    ? 'For your 30th, I want to open it with my own hands.'
+                    : 'The first note is waiting inside.'}
               </p>
             </div>
           </div>
@@ -980,11 +980,11 @@ const OpeningStage = React.memo(function OpeningStage({
 
       <div className={`w-full rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(12,12,18,0.72),rgba(12,12,18,0.44))] shadow-[0_20px_40px_rgba(0,0,0,0.2)] ${veryCompact ? 'px-3 py-3' : compact ? 'px-3.5 py-3.5' : 'px-4.5 py-4.5'}`}>
         <p className="m-0 text-[0.62rem] uppercase tracking-[0.28em] text-[#E4C27E]/84">
-          {simpleInteractionMode && authState === 'idle' ? 'Take your time' : statusCopy.eyebrow}
+          {simpleInteractionMode && authState === 'idle' ? 'Tap to open' : statusCopy.eyebrow}
         </p>
         <p className={`mt-2.5 m-0 text-[#F8F4EE]/80 ${veryCompact ? 'text-[0.78rem] leading-[1.44]' : compact ? 'text-[0.84rem] leading-[1.56]' : 'text-[0.92rem] leading-[1.72]'}`}>
           {simpleInteractionMode && authState === 'idle'
-            ? 'Take your time, and I will open the gift I made for you.'
+            ? 'Open this gift first. For your 30th, I want to open it with my own hands.'
             : statusCopy.text}
         </p>
       </div>
@@ -1281,22 +1281,22 @@ const StoryGiftStage = React.memo(function StoryGiftStage({
       className={`relative mx-auto flex w-[min(88vw,23rem)] max-h-full min-h-0 flex-col items-start gap-3 rounded-[1.45rem] border border-[#E6C98A]/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.03))] text-left shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-lg ${veryCompact ? 'px-3 py-3' : compact ? 'px-3.5 py-3.5' : 'px-4.5 py-4.5'}`}
     >
       <span className="text-[0.62rem] uppercase tracking-[0.28em] text-[#E4C27E]">
-        A little note for you
+        for you
       </span>
       <h2 className={`m-0 font-light italic font-serif tracking-[-0.02em] text-[#FFF8EE] ${veryCompact ? 'text-[1.08rem]' : compact ? 'text-[1.18rem]' : 'text-[1.35rem]'}`}>
-        {isOpening ? 'one soft moment' : 'open it gently'}
+        {isOpening ? 'stay with me for one second' : 'pull gently'}
       </h2>
       <p className={`m-0 text-[#F8F4EE]/82 ${veryCompact ? 'text-[0.76rem] leading-[1.4]' : compact ? 'text-[0.82rem] leading-[1.5]' : 'text-[0.9rem] leading-[1.62]'}`}>
         {isOpening
-          ? 'The first page is almost here.'
+          ? 'I want this moment to feel a little slower.'
           : simpleInteractionMode
-            ? 'Tap the note, or pull it up a little.'
-            : 'Pull the note up gently.'}
+            ? 'Tap or pull upward a little.'
+            : 'Pull upward gently.'}
       </p>
       {!veryCompact && (
         <div className="mt-1 flex items-center gap-3 text-[0.66rem] uppercase tracking-[0.22em] text-[#C5A059]/74">
           <span className="inline-block h-[1px] w-10 bg-gradient-to-r from-[#C5A059]/55 to-transparent" />
-          <span>{isOpening ? 'just a little longer' : simpleInteractionMode ? 'tap or pull' : 'pull gently'}</span>
+          <span>{isOpening ? 'almost there' : simpleInteractionMode ? 'tap or pull' : 'pull gently'}</span>
         </div>
       )}
       <div className="mt-2 w-full">
@@ -1312,7 +1312,7 @@ const StoryGiftStage = React.memo(function StoryGiftStage({
           <div className="mt-2 flex items-center justify-between gap-3">
             {!veryCompact && (
               <p className={`m-0 text-[#F8F4EE]/54 ${compact ? 'text-[0.72rem] leading-[1.38]' : 'text-[0.78rem] leading-[1.44]'}`}>
-                {simpleInteractionMode ? 'Tap the note, or pull it slightly upward.' : 'Drag directly on the note inside the box.'}
+                {simpleInteractionMode ? 'Tap or pull upward slightly.' : 'Drag upward on the note.'}
               </p>
             )}
             <span className={`shrink-0 uppercase tracking-[0.2em] text-[#E4C27E]/78 ${veryCompact ? 'text-[0.56rem]' : 'text-[0.62rem]'}`}>
@@ -1355,7 +1355,7 @@ const OpeningBridgeStage = React.memo(function OpeningBridgeStage({
         Opening gently
       </span>
       <h2 className={`m-0 max-w-[16rem] font-light italic font-serif tracking-[-0.02em] text-[#FFF8EE] ${veryCompact ? 'text-[1rem] leading-[1.22]' : compact ? 'text-[1.08rem] leading-[1.2]' : 'text-[1.2rem] leading-[1.16]'}`}>
-        The first note is waiting softly inside
+        hold this moment gently
       </h2>
       <p className={`m-0 mt-0.5 text-[#F8F4EE]/82 ${veryCompact ? 'text-[0.76rem] leading-[1.38]' : compact ? 'text-[0.82rem] leading-[1.48]' : 'text-[0.9rem] leading-[1.6]'}`}>
         {birthdayContent.opening.giftPrompt.bridgeText}
@@ -1363,10 +1363,53 @@ const OpeningBridgeStage = React.memo(function OpeningBridgeStage({
       {!veryCompact && (
         <div className="mt-1 flex items-center gap-3 text-[0.66rem] uppercase tracking-[0.22em] text-[#C5A059]/74">
           <span className="inline-block h-[1px] w-10 bg-gradient-to-r from-[#C5A059]/55 to-transparent" />
-          <span>Softly into the first page</span>
+          <span>slowly, with love</span>
         </div>
       )}
     </motion.section>
+  );
+});
+
+const TimelineNodeShell = React.memo(function TimelineNodeShell({
+  compact,
+  veryCompact,
+  progress,
+  isMinor = false,
+  children,
+}: {
+  compact: boolean;
+  veryCompact: boolean;
+  progress: string;
+  isMinor?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={`pointer-events-auto flex h-full w-full ${compact || veryCompact ? 'items-start justify-stretch pt-1' : 'items-center justify-center'}`}>
+      <div
+        style={{ maxHeight: 'var(--stage-max-height)' }}
+        className={`relative flex max-h-full min-h-0 w-full ${veryCompact ? 'max-w-[21rem] gap-2.5 px-1' : compact ? 'max-w-[23rem] gap-3 px-1.5' : 'max-w-[24.5rem] gap-3.5'} flex-col`}
+      >
+        <div className={`absolute bottom-0 top-0 ${veryCompact ? 'left-2.5' : compact ? 'left-3' : 'left-3.5'}`}>
+          <div className="h-full w-[1px] bg-[linear-gradient(180deg,rgba(230,201,138,0.52),rgba(230,201,138,0.14)_74%,transparent)]" />
+        </div>
+        <div className={`relative z-10 flex w-full flex-col ${veryCompact ? 'gap-1.5 pl-7' : compact ? 'gap-2 pl-8' : 'gap-2.5 pl-9'}`}>
+          <div className="flex items-center justify-between gap-2.5">
+            <div className={`relative shrink-0 rounded-full border ${isMinor ? 'h-2.5 w-2.5 border-[#E6C98A]/70 bg-[#E6C98A]/78' : 'h-3.5 w-3.5 border-[#F2D59A]/90 bg-[#E6C98A]/90'}`}>
+              {!isMinor && <div className="absolute inset-[-5px] rounded-full border border-[#E6C98A]/34" />}
+            </div>
+            <span className={`${veryCompact ? 'text-[0.5rem] tracking-[0.18em]' : 'text-[0.56rem] tracking-[0.22em]'} uppercase text-[#F8F4EE]/30`}>
+              {progress}
+            </span>
+          </div>
+        </div>
+        <div className={`relative z-10 min-h-0 flex-1 ${veryCompact ? 'pl-7' : compact ? 'pl-8' : 'pl-9'}`}>
+          <div className={`absolute bottom-0 top-0 ${veryCompact ? '-left-[0.1rem]' : compact ? '-left-[0.16rem]' : '-left-[0.2rem]'}`}>
+            <div className="h-full w-[1px] bg-[linear-gradient(180deg,rgba(230,201,138,0.42),rgba(230,201,138,0.08))]" />
+          </div>
+          <div className="h-full min-h-0 pt-1">{children}</div>
+        </div>
+      </div>
+    </div>
   );
 });
 
@@ -1436,17 +1479,17 @@ const StoryAlbumStage = React.memo(function StoryAlbumStage({
   const headerEyebrow =
     eyebrow ??
     (page === 1
-      ? 'for my baby'
+      ? 'for you'
       : page === total
-        ? 'one more page'
-        : 'for us');
+        ? 'still us'
+        : 'with you');
   const headerTitle =
     title ??
     (page === 1
-      ? 'The first page I wanted you to see.'
+      ? 'I wanted to keep this with you.'
       : page === total
-        ? 'The last photo page before I say the rest.'
-        : 'Another little piece of us I wanted to keep.');
+        ? 'One more memory before the last words.'
+        : 'Another moment I wanted to keep close.');
 
   return (
     <div className={`pointer-events-auto flex h-full w-full ${compact || veryCompact ? 'items-start justify-stretch pt-1' : 'items-center justify-center'}`}>
@@ -1493,6 +1536,10 @@ const ClosingStageShell = React.memo(function ClosingStageShell({
   eyebrow,
   title,
   progress,
+  converging = false,
+  convergenceStep = 1,
+  convergenceTotal = 4,
+  finale = false,
   children,
 }: {
   compact: boolean;
@@ -1500,8 +1547,16 @@ const ClosingStageShell = React.memo(function ClosingStageShell({
   eyebrow?: string;
   title?: string;
   progress: string;
+  converging?: boolean;
+  convergenceStep?: number;
+  convergenceTotal?: number;
+  finale?: boolean;
   children: React.ReactNode;
 }) {
+  const clampedTotal = Math.max(1, convergenceTotal);
+  const clampedStep = Math.min(Math.max(1, convergenceStep), clampedTotal);
+  const progressHeight = `${(clampedStep / clampedTotal) * 100}%`;
+
   return (
     <div className={`pointer-events-auto flex h-full w-full ${compact || veryCompact ? 'items-start justify-stretch pt-1' : 'items-center justify-center'}`}>
       <div
@@ -1512,6 +1567,18 @@ const ClosingStageShell = React.memo(function ClosingStageShell({
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-[linear-gradient(90deg,transparent,rgba(230,201,138,0.18),transparent)]" />
         {!veryCompact && <div className="pointer-events-none absolute left-3 top-3 h-4 w-4 border-l border-t border-[#E6C98A]/28" />}
         {!veryCompact && <div className="pointer-events-none absolute right-3 top-3 h-4 w-4 border-r border-t border-[#E6C98A]/28" />}
+        {converging && (
+          <>
+            <div className={`pointer-events-none absolute bottom-2 top-2 ${veryCompact ? 'left-2.5' : 'left-3.5'} w-[1px] bg-[linear-gradient(180deg,rgba(230,201,138,0.22),rgba(230,201,138,0.08))]`} />
+            <div
+              className={`pointer-events-none absolute bottom-2 ${veryCompact ? 'left-2.5' : 'left-3.5'} w-[1px] bg-[linear-gradient(180deg,rgba(230,201,138,0.88),rgba(230,201,138,0.22))]`}
+              style={{ height: progressHeight }}
+            />
+            <div className={`pointer-events-none absolute ${veryCompact ? 'left-[0.43rem]' : 'left-[0.67rem]'} ${finale ? 'top-[calc(100%-2.55rem)] h-7 w-7' : 'top-[calc(100%-1.95rem)] h-[1.125rem] w-[1.125rem]'} rounded-full border ${finale ? 'border-[#F2D59A]/95 bg-[#E6C98A]/92 shadow-[0_0_44px_rgba(230,201,138,0.7)]' : 'border-[#E6C98A]/75 bg-[#E6C98A]/72'} `} />
+            {finale && <div className={`pointer-events-none absolute ${veryCompact ? 'left-[0.16rem]' : 'left-[0.39rem]'} top-[calc(100%-2.82rem)] h-[1.75rem] w-[1.75rem] rounded-full border border-[#F2D59A]/38`} />}
+            {finale && <div className={`pointer-events-none absolute ${veryCompact ? '-left-[0.32rem]' : '-left-[0.05rem]'} top-[calc(100%-3.24rem)] h-[2.55rem] w-[2.55rem] rounded-full bg-[radial-gradient(circle,rgba(230,201,138,0.46)_0%,rgba(230,201,138,0.22)_36%,rgba(230,201,138,0.04)_68%,transparent_100%)] blur-[2px]`} />}
+          </>
+        )}
         <div className="relative z-10 flex w-full items-center justify-between">
           <span className={`${veryCompact ? 'text-[0.55rem] tracking-[0.2em]' : 'text-[0.62rem] tracking-[0.28em]'} uppercase text-[#E4C27E]/82`}>
             {eyebrow ?? ''}
@@ -1664,10 +1731,9 @@ const GiftCubeVisual = React.memo(function GiftCubeVisual({
 
         {showFaceLock && (
           <div className="absolute inset-x-[31%] bottom-[4.35rem] z-[6] rounded-[1.15rem] border border-[#E6C98A]/26 bg-[linear-gradient(180deg,rgba(10,10,14,0.82),rgba(10,10,14,0.52))] px-3 py-3 shadow-[0_18px_36px_rgba(0,0,0,0.26)] backdrop-blur-lg">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-[0.52rem] uppercase tracking-[0.22em] text-[#E6C98A]/76">Face ID</span>
-              <span className="text-[0.48rem] uppercase tracking-[0.18em] text-[#F8F4EE]/42">
-                {faceLockState === 'unlocked' ? 'Unlocked' : faceLockState === 'scanning' ? 'Scanning' : 'Locked'}
+            <div className="mb-2 text-center">
+              <span className="text-[0.48rem] uppercase tracking-[0.18em] text-[#F8F4EE]/52">
+                {faceLockState === 'unlocked' ? 'Open for you' : faceLockState === 'scanning' ? 'Opening your gift' : 'Tap to open'}
               </span>
             </div>
             <motion.div
@@ -1716,7 +1782,7 @@ const GiftCubeVisual = React.memo(function GiftCubeVisual({
                   className="absolute inset-0 flex items-center justify-center bg-[radial-gradient(circle,rgba(197,160,89,0.18),transparent_62%)]"
                 >
                   <div className="rounded-full border border-[#E6C98A]/34 bg-black/24 px-2.5 py-1">
-                    <span className="text-[0.54rem] font-medium tracking-[0.18em] text-[#FFF8EE]">Done</span>
+                    <span className="text-[0.54rem] font-medium tracking-[0.18em] text-[#FFF8EE]">For you</span>
                   </div>
                 </motion.div>
               )}

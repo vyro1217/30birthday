@@ -45,7 +45,7 @@ export const MainBlessing = memo(function MainBlessing({
         {/* Editorial Vertical Line */}
         {!compact && !veryCompact && <div className={`absolute top-2 bottom-2 w-[1px] bg-gradient-to-b from-transparent via-[#C5A059]/20 to-transparent ${isBoxBottom ? '-left-3' : '-left-6 sm:-left-8'}`} />}
         
-        <div className={`min-h-0 overflow-y-auto overscroll-contain ${veryCompact ? 'pr-1' : ''}`}>
+        <div className={`touch-scroll min-h-0 overflow-y-auto overscroll-contain ${veryCompact ? 'pr-1' : ''}`}>
         {paragraphs.map((para, idx) => (
           <motion.p 
             key={idx}

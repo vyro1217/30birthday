@@ -84,7 +84,7 @@ export const FinalWish = memo(function FinalWish({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-          className={`m-0 max-h-full overflow-y-auto overscroll-contain pr-1 text-[#F8F4EE] tracking-[0.01em] font-light italic font-serif whitespace-pre-line break-words [overflow-wrap:anywhere] ${isBoxBottom ? (veryCompact ? 'text-[clamp(0.82rem,3vw,0.9rem)] leading-[1.46]' : compact ? 'text-[clamp(0.88rem,3.3vw,0.96rem)] leading-[1.54]' : 'text-[clamp(0.96rem,4vw,1.08rem)] leading-[1.8]') : (compact ? 'text-[clamp(0.94rem,3.7vw,1.02rem)] leading-[1.64]' : 'text-[clamp(1rem,4.4vw,1.24rem)] leading-[1.82] sm:leading-[1.96]')}`}
+          className={`touch-scroll m-0 max-h-full overflow-y-auto overscroll-contain pr-1 text-[#F8F4EE] tracking-[0.01em] font-light italic font-serif whitespace-pre-line break-words [overflow-wrap:anywhere] ${isBoxBottom ? (veryCompact ? 'text-[clamp(0.82rem,3vw,0.9rem)] leading-[1.46]' : compact ? 'text-[clamp(0.88rem,3.3vw,0.96rem)] leading-[1.54]' : 'text-[clamp(0.96rem,4vw,1.08rem)] leading-[1.8]') : (compact ? 'text-[clamp(0.94rem,3.7vw,1.02rem)] leading-[1.64]' : 'text-[clamp(1rem,4.4vw,1.24rem)] leading-[1.82] sm:leading-[1.96]')}`}
         >
           {text}
         </motion.p>

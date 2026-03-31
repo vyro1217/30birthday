@@ -96,7 +96,7 @@ export const IntroOverlay = memo(function IntroOverlay({
         <div className="relative z-10 flex w-full flex-col items-start gap-3">
           <div className={`${compact || veryCompact ? 'w-9' : 'w-12'} h-[1px] bg-gradient-to-r from-[#C5A059]/45 to-transparent`} />
 
-          <p className={`min-h-0 overflow-y-auto overscroll-contain pr-1 text-left ${veryCompact ? 'text-[clamp(0.84rem,3vw,0.92rem)] leading-[1.5] tracking-[0.01em]' : compact ? 'text-[clamp(0.9rem,3.3vw,0.98rem)] leading-[1.58] tracking-[0.015em]' : 'text-[clamp(0.96rem,4vw,1.04rem)] leading-[1.88] tracking-[0.05em]'} font-light italic font-serif break-words whitespace-pre-line [overflow-wrap:anywhere] text-transparent bg-clip-text bg-gradient-to-br from-[#F8F4EE] via-[#F8F4EE] to-[#F8F4EE]/40`}>
+          <p className={`touch-scroll min-h-0 overflow-y-auto overscroll-contain pr-1 text-left ${veryCompact ? 'text-[clamp(0.84rem,3vw,0.92rem)] leading-[1.5] tracking-[0.01em]' : compact ? 'text-[clamp(0.9rem,3.3vw,0.98rem)] leading-[1.58] tracking-[0.015em]' : 'text-[clamp(0.96rem,4vw,1.04rem)] leading-[1.88] tracking-[0.05em]'} font-light italic font-serif break-words whitespace-pre-line [overflow-wrap:anywhere] text-transparent bg-clip-text bg-gradient-to-br from-[#F8F4EE] via-[#F8F4EE] to-[#F8F4EE]/40`}>
             {text}
           </p>
         </div>
