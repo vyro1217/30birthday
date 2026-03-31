@@ -1,5 +1,5 @@
-import React, { Suspense } from 'react';
-import { Canvas } from '@react-three/fiber';
+import React, { Suspense, useEffect } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
 import { GiftBoxScene } from './GiftBoxScene';
 import { BirthdayStep } from '../types/birthday';
 
@@ -10,9 +10,11 @@ type SceneMode =
   | 'timeline-expand'
   | 'reading-background-box'
   | 'closing-gift';
+type ScenePlaybackMode = 'always' | 'demand';
 
 interface FullSceneCanvasProps {
   sceneMode: SceneMode;
+  playbackMode: ScenePlaybackMode;
   step: BirthdayStep;
   onSceneFailure: () => void;
   simpleInteractionMode?: boolean;
@@ -22,8 +24,48 @@ interface FullSceneCanvasProps {
   onStoryGiftPullEnd?: (distance: number) => void;
 }
 
+function CanvasPlaybackController({
+  playbackMode,
+  transitionKey,
+}: {
+  playbackMode: ScenePlaybackMode;
+  transitionKey: string;
+}) {
+  const invalidate = useThree((state) => state.invalidate);
+
+  useEffect(() => {
+    if (playbackMode !== 'demand') {
+      invalidate();
+      return;
+    }
+
+    let frameId = 0;
+    const startedAt = performance.now();
+    const transitionDurationMs = 1800;
+
+    const tick = () => {
+      invalidate();
+
+      if (performance.now() - startedAt < transitionDurationMs) {
+        frameId = window.requestAnimationFrame(tick);
+      }
+    };
+
+    tick();
+
+    return () => {
+      if (frameId) {
+        window.cancelAnimationFrame(frameId);
+      }
+    };
+  }, [invalidate, playbackMode, transitionKey]);
+
+  return null;
+}
+
 export const FullSceneCanvas = React.memo(function FullSceneCanvas({
   sceneMode,
+  playbackMode,
   step,
   onSceneFailure,
   simpleInteractionMode = false,
@@ -43,7 +85,7 @@ export const FullSceneCanvas = React.memo(function FullSceneCanvas({
         depth: true,
       }}
       dpr={[1, 1]}
-      frameloop="always"
+      frameloop={playbackMode}
       performance={{ min: 0.3 }}
       onCreated={({ gl }) => {
         gl.domElement.addEventListener(
@@ -57,6 +99,7 @@ export const FullSceneCanvas = React.memo(function FullSceneCanvas({
       }}
     >
       <Suspense fallback={null}>
+        <CanvasPlaybackController playbackMode={playbackMode} transitionKey={`${sceneMode}:${step}`} />
         <GiftBoxScene
           sceneMode={sceneMode}
           step={step}

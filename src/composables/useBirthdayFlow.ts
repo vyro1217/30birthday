@@ -3,7 +3,7 @@ import { BirthdayStep } from '../types/birthday';
 
 const AUTO_ADVANCE_DELAY: Partial<Record<BirthdayStep, number>> = {
   intro: 2200,
-  'opening-bridge': 980,
+  'opening-bridge': 2000,
   'cosmic-core': 1200,
   'timeline-expand': 1400,
   'node-before': 6200,

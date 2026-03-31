@@ -32,14 +32,16 @@ export const MainBlessing = memo(function MainBlessing({
     >
       {/* Refined Luxury Borders & Accents */}
       <div className={`pointer-events-none absolute inset-0 border border-white/10 ${isBoxBottom ? 'rounded-[1.6rem]' : 'rounded-[36px] sm:rounded-[44px]'}`} />
-      <div className="absolute top-0 left-0 h-[1px] w-full bg-gradient-to-r from-transparent via-[#C5A059]/30 to-transparent opacity-70" />
-      <div className="absolute bottom-0 left-0 h-[1px] w-full bg-gradient-to-r from-transparent via-[#C5A059]/24 to-transparent opacity-50" />
+      <div className="relative z-10">
+        <div className="absolute top-0 left-0 h-[1px] w-full bg-gradient-to-r from-transparent via-[#C5A059]/30 to-transparent opacity-70" />
+        <div className="absolute bottom-0 left-0 h-[1px] w-full bg-gradient-to-r from-transparent via-[#C5A059]/24 to-transparent opacity-50" />
+      </div>
       
       {/* Decorative Corner */}
       {!compact && !isBoxBottom && <div className="absolute top-6 left-6 w-4 h-4 border-t border-l border-[#C5A059]/30" />}
       {!compact && !isBoxBottom && <div className="absolute bottom-6 right-6 w-4 h-4 border-b border-r border-[#C5A059]/30" />}
 
-      <div className={`relative flex max-h-full min-h-0 flex-col ${isBoxBottom ? (veryCompact ? 'gap-2.5' : compact ? 'gap-3' : 'gap-4') : compact ? 'gap-4' : 'gap-6 sm:gap-7'}`}>
+      <div className={`relative z-10 flex max-h-full min-h-0 flex-col ${isBoxBottom ? (veryCompact ? 'gap-2.5' : compact ? 'gap-3' : 'gap-4') : compact ? 'gap-4' : 'gap-6 sm:gap-7'}`}>
         {/* Editorial Vertical Line */}
         {!compact && !veryCompact && <div className={`absolute top-2 bottom-2 w-[1px] bg-gradient-to-b from-transparent via-[#C5A059]/20 to-transparent ${isBoxBottom ? '-left-3' : '-left-6 sm:-left-8'}`} />}
         

@@ -29,27 +29,58 @@ export const MemoryNote = memo(function MemoryNote({
   pageTurnDirection = 'forward',
 }: MemoryNoteProps) {
   const isRightAligned = align === 'right';
+  const isMobileCard = compact || veryCompact;
   const pageTurnOffset = pageTurnDirection === 'forward' ? 32 : -32;
   const pageTurnRotate = pageTurnDirection === 'forward' ? 7 : -7;
   const [isImageLoaded, setIsImageLoaded] = useState(!image);
   const [hasImageError, setHasImageError] = useState(false);
   const textLength = (text ?? '').replace(/\s+/g, '').length;
+  const isHeroImage = imagePresentation === 'hero';
+  const isQuietImage = imagePresentation === 'quiet';
   const favorText = textLength > 110 || compact;
   const stronglyFavorText = textLength > 170 || veryCompact;
-  const useBottomImageOverlay = Boolean(image && text && !stronglyFavorText);
+  const useBottomImageOverlay = Boolean(image && text && (isMobileCard || !stronglyFavorText) );
   const imageMaxHeightClass = 'max-h-[calc(min(100dvh,var(--stage-max-height))-1rem)]';
-  const imageWrapperClass = 'w-full';
+  const imageWrapperClass = isMobileCard
+    ? 'left-1/2 w-[100dvw] max-w-none -translate-x-1/2'
+    : 'w-full';
   const imageAspectClass = stronglyFavorText
-    ? `aspect-auto ${imageMaxHeightClass}`
+    ? isQuietImage
+      ? 'aspect-[4/4.7] max-h-[calc(min(48dvh,var(--stage-max-height))-1.5rem)]'
+      : `aspect-auto ${imageMaxHeightClass}`
     : favorText
-      ? imagePresentation === 'quiet'
-        ? `aspect-auto max-h-[calc(min(76dvh,var(--stage-max-height))-1.5rem)]`
+      ? isQuietImage
+        ? 'aspect-[4/4.8] max-h-[calc(min(44dvh,var(--stage-max-height))-1.5rem)]'
         : `aspect-auto ${imageMaxHeightClass}`
-      : imagePresentation === 'hero'
+      : isHeroImage
         ? `aspect-[4/5] ${imageMaxHeightClass}`
-        : imagePresentation === 'quiet'
-          ? `aspect-[4/4.4] max-h-[calc(min(70dvh,var(--stage-max-height))-1.5rem)]`
+        : isQuietImage
+          ? 'aspect-[4/4.9] max-h-[calc(min(40dvh,var(--stage-max-height))-1.5rem)]'
           : `aspect-[4/4.8] max-h-[calc(min(76dvh,var(--stage-max-height))-1.25rem)]`;
+  const imageFrameClass = isMobileCard ? 'h-full' : '';
+  const imageElementSizeClass = isMobileCard ? 'h-full' : '';
+  const imageBlockClass = isQuietImage
+    ? `${isMobileCard ? '' : isRightAligned ? 'ml-auto' : 'mr-auto'} ${veryCompact ? 'mb-1' : compact ? 'mb-1.5' : 'mb-2'}`
+    : '';
+  const textShellClass = image
+    ? isQuietImage
+      ? 'border-white/7 bg-[linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.015))]'
+      : 'border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))]'
+    : 'border-transparent bg-transparent';
+  const overlayFrameClass = isMobileCard
+    ? veryCompact
+      ? 'min-h-[7.6rem] max-h-[9.25rem] px-3 pb-3 pt-10'
+      : 'min-h-[8.6rem] max-h-[10.5rem] px-4 pb-4 pt-11'
+    : veryCompact
+      ? 'px-3 pb-3 pt-8'
+      : compact
+        ? 'px-3.5 pb-3.5 pt-9'
+        : 'px-4 pb-4 pt-12';
+  const overlayInnerClass = isMobileCard
+    ? veryCompact
+      ? 'max-w-[min(100%,18.5rem)]'
+      : 'max-w-[min(100%,21rem)]'
+    : 'max-w-full';
 
   useEffect(() => {
     setIsImageLoaded(!image);
@@ -63,19 +94,20 @@ export const MemoryNote = memo(function MemoryNote({
       exit={{ opacity: 0, x: -pageTurnOffset * 0.45, rotateY: -pageTurnRotate * 0.65, scale: 0.985 }}
       transition={{ duration: 0.78, ease: [0.16, 1, 0.3, 1] }}
       style={{ transformOrigin: pageTurnDirection === 'forward' ? 'right center' : 'left center' }}
-      className={`flex ${veryCompact ? 'w-[min(84vw,20rem)]' : compact ? 'w-[min(86vw,22rem)]' : 'w-[min(90vw,25rem)]'} h-full max-h-[calc(var(--stage-max-height)-0.75rem)] min-h-0 flex-col overflow-hidden pb-3 ${stronglyFavorText ? 'gap-2' : veryCompact ? 'gap-2.5' : compact ? 'gap-3' : 'gap-6 sm:gap-7'} ${isRightAligned ? 'items-end text-right' : 'items-start text-left'}`}
+      className={`flex w-full ${veryCompact ? 'max-w-[20rem]' : compact ? 'max-w-[22.5rem]' : 'max-w-[25rem]'} h-full max-h-[calc(var(--stage-max-height)-0.75rem)] min-h-0 flex-col ${isMobileCard ? 'overflow-visible' : 'overflow-hidden'} pb-2 ${stronglyFavorText ? 'gap-2' : veryCompact ? 'gap-2.5' : compact ? 'gap-3' : 'gap-6 sm:gap-7'} ${isRightAligned ? 'items-end text-right' : 'items-start text-left'}`}
     >
       {image && !hasImageError && (
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className={`relative shrink-0 overflow-hidden rounded-[20px] sm:rounded-[24px] ${imageWrapperClass}`}
+          className={`relative shrink-0 overflow-hidden rounded-[20px] sm:rounded-[24px] ${imageWrapperClass} ${imageBlockClass} ${imageFrameClass}`}
         >
-          {!favorText && <div className="pointer-events-none absolute inset-x-4 top-[0.5rem] h-full rounded-[22px] border border-white/6 bg-white/[0.018] shadow-[0_12px_24px_rgba(0,0,0,0.1)]" />}
-          {!favorText && <div className="pointer-events-none absolute inset-x-1.5 top-[0.12rem] h-full rounded-[22px] border border-white/5 bg-white/[0.012]" />}
-          {!favorText && <div className="absolute -inset-4 border border-white/5 rounded-[32px] sm:rounded-[40px] pointer-events-none" />}
-          <div className={`absolute inset-0 z-10 rounded-[20px] pointer-events-none sm:rounded-[24px] ${useBottomImageOverlay ? 'bg-[linear-gradient(180deg,rgba(8,8,12,0.04)_0%,rgba(8,8,12,0.08)_44%,rgba(8,8,12,0.42)_72%,rgba(8,8,12,0.82)_100%)]' : 'bg-gradient-to-t from-black/25 to-transparent'}`} />
+          {!favorText && !isQuietImage && !isMobileCard && <div className="pointer-events-none absolute inset-x-4 top-[0.5rem] h-full rounded-[22px] border border-white/6 bg-white/[0.018] shadow-[0_12px_24px_rgba(0,0,0,0.1)]" />}
+          {!favorText && !isQuietImage && !isMobileCard && <div className="pointer-events-none absolute inset-x-1.5 top-[0.12rem] h-full rounded-[22px] border border-white/5 bg-white/[0.012]" />}
+          {!favorText && !isQuietImage && !isMobileCard && <div className="absolute -inset-4 border border-white/5 rounded-[32px] sm:rounded-[40px] pointer-events-none" />}
+          {!favorText && isQuietImage && !isMobileCard && <div className="pointer-events-none absolute -inset-3 rounded-[28px] border border-white/4" />}
+          <div className={`absolute inset-0 z-10 rounded-[20px] pointer-events-none sm:rounded-[24px] ${useBottomImageOverlay ? (isMobileCard ? 'bg-[linear-gradient(180deg,rgba(8,8,12,0.04)_0%,rgba(8,8,12,0.06)_36%,rgba(8,8,12,0.44)_62%,rgba(8,8,12,0.82)_100%)]' : 'bg-[linear-gradient(180deg,rgba(8,8,12,0.04)_0%,rgba(8,8,12,0.08)_44%,rgba(8,8,12,0.42)_72%,rgba(8,8,12,0.82)_100%)]') : isQuietImage ? 'bg-[linear-gradient(180deg,rgba(8,8,12,0.02),rgba(8,8,12,0.14)_70%,rgba(8,8,12,0.26))]' : 'bg-gradient-to-t from-black/25 to-transparent'}`} />
           <motion.div
             initial={false}
             animate={{ opacity: isImageLoaded ? 0 : 1 }}
@@ -91,29 +123,31 @@ export const MemoryNote = memo(function MemoryNote({
               setHasImageError(true);
               setIsImageLoaded(true);
             }}
-            className={`w-full rounded-[20px] border border-white/10 object-cover object-center shadow-[0_22px_52px_rgba(0,0,0,0.5)] sm:rounded-[24px] ${imageAspectClass}`}
+            className={`w-full rounded-[20px] border ${isQuietImage ? 'border-white/8 shadow-[0_14px_30px_rgba(0,0,0,0.36)]' : 'border-white/10 shadow-[0_22px_52px_rgba(0,0,0,0.5)]'} object-cover object-center sm:rounded-[24px] ${imageAspectClass} ${imageElementSizeClass}`}
             referrerPolicy="no-referrer"
             loading={imageLoading}
             fetchPriority={imageFetchPriority}
             decoding="async"
-            sizes="(max-width: 640px) 88vw, 440px"
+            sizes={isMobileCard ? '100vw' : isQuietImage ? '(max-width: 640px) 52vw, 220px' : '(max-width: 640px) 88vw, 440px'}
           />
           {useBottomImageOverlay && (
-            <div className={`absolute inset-x-0 bottom-0 z-20 flex flex-col ${veryCompact ? 'gap-1.5 px-3 pb-3 pt-8' : compact ? 'gap-2 px-3.5 pb-3.5 pt-10' : 'gap-2.5 px-4 pb-4 pt-12'}`}>
-              {eyebrow && (
+            <div className={`absolute inset-x-0 bottom-0 z-20 flex ${isRightAligned && !isMobileCard ? 'justify-end' : 'justify-start'} ${overlayFrameClass}`}>
+              <div className={`flex w-full min-h-0 flex-col ${veryCompact ? 'gap-1.5' : 'gap-2'} ${overlayInnerClass}`}>
+                {eyebrow && (
+                  <p
+                    className={`m-0 shrink-0 uppercase ${veryCompact ? 'text-[0.5rem] tracking-[0.18em]' : 'text-[0.56rem] tracking-[0.22em]'} text-[#F2D59A]/92`}
+                    style={{ textShadow: '0 1px 10px rgba(0,0,0,0.35)' }}
+                  >
+                    {eyebrow}
+                  </p>
+                )}
                 <p
-                  className={`m-0 uppercase ${veryCompact ? 'text-[0.5rem] tracking-[0.18em]' : 'text-[0.56rem] tracking-[0.22em]'} text-[#F2D59A]/92`}
-                  style={{ textShadow: '0 1px 10px rgba(0,0,0,0.35)' }}
+                  className={`m-0 min-h-0 flex-1 overflow-y-auto overscroll-contain whitespace-pre-line break-words font-light italic font-serif text-[#FFF8EE] ${favorText ? 'text-[clamp(0.8rem,2.95vw,0.88rem)] leading-[1.38]' : compact ? 'text-[clamp(0.84rem,3.1vw,0.92rem)] leading-[1.46]' : 'text-[clamp(0.92rem,3.7vw,1rem)] leading-[1.58]'} tracking-[0.01em]`}
+                  style={{ textShadow: '0 2px 18px rgba(0,0,0,0.5)' }}
                 >
-                  {eyebrow}
+                  {text}
                 </p>
-              )}
-              <p
-                className={`m-0 max-h-[42%] overflow-y-auto overscroll-contain whitespace-pre-line break-words font-light italic font-serif text-[#FFF8EE] ${favorText ? 'text-[clamp(0.8rem,2.95vw,0.88rem)] leading-[1.38]' : compact ? 'text-[clamp(0.84rem,3.1vw,0.92rem)] leading-[1.46]' : 'text-[clamp(0.92rem,3.7vw,1rem)] leading-[1.58]'} tracking-[0.01em]`}
-                style={{ textShadow: '0 2px 18px rgba(0,0,0,0.5)' }}
-              >
-                {text}
-              </p>
+              </div>
             </div>
           )}
           <div className={`pointer-events-none absolute inset-y-5 ${pageTurnDirection === 'forward' ? 'right-0 w-5 bg-gradient-to-l from-black/10 to-transparent' : 'left-0 w-5 bg-gradient-to-r from-black/10 to-transparent'}`} />
@@ -133,9 +167,9 @@ export const MemoryNote = memo(function MemoryNote({
               {eyebrow}
             </p>
           )}
-          <div className={`h-full overflow-hidden rounded-[1.25rem] border ${image ? 'border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))]' : 'border-transparent bg-transparent'}`}>
+          <div className={`h-full overflow-hidden rounded-[1.15rem] border ${textShellClass}`}>
             <p
-              className={`m-0 h-full overflow-y-auto overscroll-contain text-[#F8F4EE]/92 ${stronglyFavorText ? 'text-[clamp(0.8rem,2.95vw,0.86rem)] leading-[1.42]' : favorText ? 'text-[clamp(0.84rem,3.1vw,0.92rem)] leading-[1.5]' : veryCompact ? 'text-[clamp(0.8rem,3vw,0.88rem)] leading-[1.46]' : compact ? 'text-[clamp(0.86rem,3.2vw,0.94rem)] leading-[1.54]' : 'text-[clamp(0.96rem,3.9vw,1.04rem)] leading-[1.8] sm:leading-[1.92]'} font-light italic tracking-[0.01em] font-serif break-words whitespace-pre-line ${image ? (veryCompact ? 'px-3 py-2.5' : compact ? 'px-3.5 py-3' : 'px-4 py-3.5') : isRightAligned ? 'border-r border-[#C5A059]/24 pl-2 pr-3 text-right' : 'border-l border-[#C5A059]/24 pl-3 pr-1 text-left'} ${image ? 'text-left' : ''}`}
+              className={`m-0 h-full overflow-y-auto overscroll-contain text-[#F8F4EE]/92 ${stronglyFavorText ? 'text-[clamp(0.8rem,2.95vw,0.86rem)] leading-[1.42]' : favorText ? 'text-[clamp(0.84rem,3.1vw,0.92rem)] leading-[1.5]' : veryCompact ? 'text-[clamp(0.8rem,3vw,0.88rem)] leading-[1.48]' : compact ? 'text-[clamp(0.88rem,3.2vw,0.96rem)] leading-[1.58]' : 'text-[clamp(0.96rem,3.9vw,1.04rem)] leading-[1.8] sm:leading-[1.92]'} font-light italic tracking-[0.01em] font-serif break-words whitespace-pre-line ${image ? (isQuietImage ? (veryCompact ? 'px-3 py-2.5' : compact ? 'px-3.5 py-3' : 'px-4 py-3.5') : veryCompact ? 'px-3 py-2.5' : compact ? 'px-3.5 py-3.5' : 'px-4 py-3.5') : isRightAligned ? 'border-r border-[#C5A059]/24 pl-2 pr-3 text-right' : 'border-l border-[#C5A059]/24 pl-3 pr-1 text-left'} ${image ? 'text-left' : ''}`}
             >
               {text}
             </p>

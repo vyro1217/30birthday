@@ -26,7 +26,7 @@ export const TitleMessage = memo(function TitleMessage({
       style={isBoxBottom ? { maxHeight: 'var(--stage-max-height)' } : undefined}
       className={
         isBoxBottom
-          ? `mx-auto flex max-h-full w-[min(88vw,23rem)] flex-col items-start ${veryCompact ? 'gap-2' : compact ? 'gap-2.5' : 'gap-3.5'} rounded-[1.6rem] border border-[#E6C98A]/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.03))] ${veryCompact ? 'px-3 py-3' : 'px-4 py-4 sm:px-5 sm:py-5'} text-left shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-lg`
+          ? `relative mx-auto flex max-h-full w-[min(88vw,23rem)] flex-col items-start ${veryCompact ? 'gap-2' : compact ? 'gap-2.5' : 'gap-3.5'} rounded-[1.6rem] border border-[#E6C98A]/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] ${veryCompact ? 'px-3 py-3' : 'px-4 py-4 sm:px-5 sm:py-5'} text-left shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-lg`
           : `mx-auto flex max-w-[min(88vw,28rem)] flex-col items-start ${compact ? 'gap-3' : 'gap-4'} px-4 text-left sm:px-6`
       }
     >
@@ -35,11 +35,12 @@ export const TitleMessage = memo(function TitleMessage({
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, scale: 1.05 }}
         transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-        className={`m-0 font-light font-serif italic text-[#F8F4EE] tracking-[-0.03em] leading-[1.04] break-words ${isBoxBottom ? (veryCompact ? 'text-[clamp(1.14rem,5.5vw,1.56rem)]' : compact ? 'text-[clamp(1.3rem,6vw,1.86rem)]' : 'text-[clamp(1.52rem,7vw,2.3rem)]') : (compact ? 'text-[clamp(1.42rem,6.8vw,2.2rem)]' : 'text-[clamp(1.68rem,8vw,3rem)]')}`}
+        className={`relative z-10 m-0 font-light font-serif italic text-[#F8F4EE] tracking-[-0.03em] leading-[1.04] break-words ${isBoxBottom ? (veryCompact ? 'text-[clamp(1.14rem,5.5vw,1.56rem)]' : compact ? 'text-[clamp(1.3rem,6vw,1.86rem)]' : 'text-[clamp(1.52rem,7vw,2.3rem)]') : (compact ? 'text-[clamp(1.42rem,6.8vw,2.2rem)]' : 'text-[clamp(1.68rem,8vw,3rem)]')}`}
       >
         {title}
       </motion.h1>
-      {subtitle && (
+      <div className="relative z-10 w-full">
+        {subtitle && (
         <motion.div
           initial={{ opacity: 0, width: 0 }}
           animate={{ opacity: 1, width: "100%" }}
@@ -51,7 +52,8 @@ export const TitleMessage = memo(function TitleMessage({
             {subtitle}
           </p>
         </motion.div>
-      )}
+        )}
+      </div>
     </motion.div>
   );
 });

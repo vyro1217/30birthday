@@ -102,9 +102,11 @@ export const GiftBoxScene = memo(function GiftBoxScene({
                 ? 2.2
                 : 2.2;
         const intensitySwing = isReadingBackgroundPhase ? 0.14 : isClosingPhase ? 0.28 : 0.75;
-        pointLightRef.current.intensity = baseIntensity + Math.sin(t * 0.5) * intensitySwing;
-        pointLightRef.current.position.x = isReadingBackgroundPhase ? 0.8 + Math.sin(t * 0.18) * 0.4 : Math.sin(t * 0.3) * 2;
-        pointLightRef.current.position.y = isReadingBackgroundPhase ? 1.45 + Math.cos(t * 0.22) * 0.16 : 1 + Math.cos(t * 0.4) * 0.5;
+        pointLightRef.current.intensity = isReadingBackgroundPhase
+          ? baseIntensity
+          : baseIntensity + Math.sin(t * 0.5) * intensitySwing;
+        pointLightRef.current.position.x = isReadingBackgroundPhase ? 0.8 : Math.sin(t * 0.3) * 2;
+        pointLightRef.current.position.y = isReadingBackgroundPhase ? 1.45 : 1 + Math.cos(t * 0.4) * 0.5;
       }
       
       // Rotate core and tracks
@@ -121,9 +123,9 @@ export const GiftBoxScene = memo(function GiftBoxScene({
       }
 
       if (groupRef.current && boxGroupRef.current && isReadingBackgroundPhase) {
-        groupRef.current.rotation.y = Math.sin(t * 0.1) * 0.015;
-        groupRef.current.rotation.x = Math.cos(t * 0.08) * 0.01;
-        boxGroupRef.current.rotation.y += 0.0008;
+        groupRef.current.rotation.y = 0;
+        groupRef.current.rotation.x = 0;
+        boxGroupRef.current.rotation.y = THREE.MathUtils.lerp(boxGroupRef.current.rotation.y, 0, 0.18);
       }
 
       if (step === 'story-gift' && insertCardRef.current && lidGroupRef.current && boxGroupRef.current) {
@@ -702,7 +704,7 @@ export const GiftBoxScene = memo(function GiftBoxScene({
       <fog attach="fog" args={['#05050A', 5, isReadingBackgroundPhase ? 19 : 25]} />
       
       {/* Layered Starry Sky - More subtle */}
-      <Stars radius={90} depth={42} count={isReadingBackgroundPhase ? 40 : showSecondaryStars ? 180 : 96} factor={1.2} saturation={0} fade speed={isReadingBackgroundPhase ? 0.015 : 0.04} />
+      <Stars radius={90} depth={42} count={isReadingBackgroundPhase ? 40 : showSecondaryStars ? 180 : 96} factor={1.2} saturation={0} fade speed={isReadingBackgroundPhase ? 0 : 0.04} />
       {showSecondaryStars && (
         <Stars radius={130} depth={42} count={34} factor={1.55} saturation={0.12} fade speed={0.08} />
       )}
@@ -723,9 +725,9 @@ export const GiftBoxScene = memo(function GiftBoxScene({
       )}
       
       <Float
-        speed={isReadingBackgroundPhase ? 0.12 : isGiftPhase ? 0.34 : isMobileViewport ? 0.4 : 0.74}
-        rotationIntensity={isReadingBackgroundPhase ? 0.014 : isGiftPhase ? 0.04 : isMobileViewport ? 0.06 : 0.12}
-        floatIntensity={isReadingBackgroundPhase ? 0.04 : isGiftPhase ? 0.1 : isMobileViewport ? 0.16 : 0.32}
+        speed={isReadingBackgroundPhase ? 0 : isGiftPhase ? 0.34 : isMobileViewport ? 0.4 : 0.74}
+        rotationIntensity={isReadingBackgroundPhase ? 0 : isGiftPhase ? 0.04 : isMobileViewport ? 0.06 : 0.12}
+        floatIntensity={isReadingBackgroundPhase ? 0 : isGiftPhase ? 0.1 : isMobileViewport ? 0.16 : 0.32}
       >
         <group ref={groupRef}>
           <group ref={boxGroupRef}>

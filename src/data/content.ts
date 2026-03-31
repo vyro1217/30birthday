@@ -28,8 +28,8 @@ export const birthdayCardContentConfig: BirthdayContentConfig = {
     linePreviewText: 'A small birthday card I made for you.',
   },
   ui: {
-    bootLabel: 'For you',
-    litePromptEyebrow: 'For you',
+    bootLabel: 'A little note for you',
+    litePromptEyebrow: 'A little note for you',
     openGiftAriaLabel: 'Open birthday card',
     previousLabel: 'Back',
     nextLabel: 'Next',
@@ -43,15 +43,15 @@ export const birthdayCardContentConfig: BirthdayContentConfig = {
   opening: {
     introText:
       'Rita, this is for your 30th birthday.\nI made you a small card with a few moments I never want to forget about us.',
-    cardEyebrow: 'For Rita, on your 30th',
+    cardEyebrow: 'For Rita, with love',
     cardTitle: 'Happy 30th Birthday',
     giftPrompt: {
-      hint: 'Tap to open the card I made for you',
+      hint: 'Take your time with the card I made for you',
       transition: 'Just one more moment.\nI want to show you something.',
       bridgeText: 'The lid is open now.\nThe first note is already waiting just inside.',
     },
     revealCard: {
-      eyebrow: 'A note inside',
+      eyebrow: 'A little note inside',
       title: 'Before anything else',
       body:
         'If this felt small from the outside, that was on purpose.\nI wanted it to feel like something you open slowly.\nSomething made just for you.\nHappy 30th, baby.',
@@ -61,19 +61,19 @@ export const birthdayCardContentConfig: BirthdayContentConfig = {
     photoLockedText: 'Your birthday card is waiting inside.',
     photoUnlockedEyebrow: 'Only yours',
     photoUnlockedText: 'Made carefully, only for you.',
-    faceIdIdleEyebrow: 'Face ID',
-    faceIdIdleText: 'Tap here and let me open your birthday card',
-    faceIdScanningEyebrow: 'Scanning',
-    faceIdScanningText: 'Gently opening something I made for you',
-    faceIdUnlockedEyebrow: 'Welcome, Rita',
-    faceIdUnlockedText: 'Your card is opening',
+    faceIdIdleEyebrow: 'Take your time',
+    faceIdIdleText: 'For your 30th, I wanted to place this in your hands myself.',
+    faceIdScanningEyebrow: 'Just for you',
+    faceIdScanningText: 'I am opening something small, made gently for you.',
+    faceIdUnlockedEyebrow: 'Come in softly',
+    faceIdUnlockedText: 'The gift is open. The first note is waiting for you inside.',
     featuredPhotoPath: 'photos/rita.jpg',
     featuredPhotoAlt: 'A portrait of Rita',
   },
   story: {
     before: {
       text:
-        'Thirty feels special to me because it feels like such a true age for you.\nNot because everything is suddenly different, but because so much of who you are has become clearer.\nYou feel warmer, steadier, and more sure of yourself now.\nAnd it is beautiful to watch.',
+        'Thirty feels special to me because it feels like such a true age for you.\nNot because life suddenly changes, but because so much of who you are has come into focus.\nYou feel warmer, steadier, and more sure of yourself now.\nIt is beautiful to watch you grow into yourself.',
     },
     us: {
       imagePath: 'photos/photo-in-mrt.jpg',

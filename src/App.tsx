@@ -33,6 +33,7 @@ type SceneMode =
   | 'timeline-expand'
   | 'reading-background-box'
   | 'closing-gift';
+type ScenePlaybackMode = 'always' | 'demand';
 const MEMORY_STEPS: BirthdayStep[] = ['memory-1', 'memory-2', 'memory-3', 'memory-4', 'memory-5'];
 const AUTO_MEMORY_STEPS = new Set<BirthdayStep>(['memory-1']);
 const READING_SCENE_STEPS = new Set<BirthdayStep>([
@@ -85,6 +86,10 @@ function getSceneMode(step: BirthdayStep): SceneMode {
   }
 
   return 'none';
+}
+
+function getScenePlaybackMode(step: BirthdayStep): ScenePlaybackMode {
+  return READING_SCENE_STEPS.has(step) ? 'demand' : 'always';
 }
 
 type NavigatorConnection = {
@@ -260,6 +265,7 @@ export default function App() {
   const [experienceMode, setExperienceMode] = useState<ExperienceMode>(getInitialExperienceMode);
   const [isStoryGiftOpening, setIsStoryGiftOpening] = useState(false);
   const [storyGiftPullDistance, setStoryGiftPullDistance] = useState(0);
+  const [lockedReadingStageHeight, setLockedReadingStageHeight] = useState<number | null>(null);
   const prefersReducedMotion = useReducedMotion();
   const viewport = useViewportHeight();
 
@@ -297,6 +303,7 @@ export default function App() {
   const isReadableExperience = experienceMode === 'readable';
   const isLiteExperience = experienceMode === 'lite';
   const sceneMode = getSceneMode(step);
+  const scenePlaybackMode = getScenePlaybackMode(step);
   const shouldRenderFullScene = !isReadableExperience && sceneMode !== 'none';
   const shouldUseStaticBackdrop =
     isReadableExperience || isLiteExperience || sceneMode === 'none' || sceneMode === 'reading-background-box';
@@ -319,7 +326,34 @@ export default function App() {
   const bottomChrome = useMeasuredHeight<HTMLDivElement>(showNavigation);
   const topReserve = (showMusicToggle ? topChrome.height : 0) + stageGap;
   const bottomReserve = (showNavigation ? bottomChrome.height : 0) + stageGap;
-  const stageHeight = Math.max(viewport.height - topReserve - bottomReserve - stageGap * 2, 0);
+  const rawStageHeight = Math.max(viewport.height, 0);
+
+  useEffect(() => {
+    if (!READING_SCENE_STEPS.has(step)) {
+      if (lockedReadingStageHeight !== null) {
+        setLockedReadingStageHeight(null);
+      }
+      return;
+    }
+
+    if (rawStageHeight <= 0) {
+      return;
+    }
+
+    setLockedReadingStageHeight((current) => {
+      if (current === null) {
+        return rawStageHeight;
+      }
+
+      // Keep page height stable during reading flow; refresh only on major viewport changes.
+      return Math.abs(current - rawStageHeight) > 120 ? rawStageHeight : current;
+    });
+  }, [lockedReadingStageHeight, rawStageHeight, step]);
+
+  const stageHeight =
+    READING_SCENE_STEPS.has(step) && lockedReadingStageHeight !== null
+      ? lockedReadingStageHeight
+      : rawStageHeight;
   const appShellStyle = {
     '--app-height': `${Math.max(viewport.height, 0)}px`,
     '--app-width': `${Math.max(viewport.width, 0)}px`,
@@ -346,7 +380,7 @@ export default function App() {
     setStoryGiftPullDistance(148);
     window.setTimeout(() => {
       continueStep();
-    }, 900);
+    }, 520);
   }, [continueStep, isStoryGiftOpening, step]);
 
   const handleStoryGiftPullChange = React.useCallback(
@@ -454,6 +488,7 @@ export default function App() {
             <Suspense fallback={null}>
               <FullSceneCanvas
                 sceneMode={sceneMode}
+                playbackMode={scenePlaybackMode}
                 step={step}
                 onSceneFailure={handleSceneFailure}
                 simpleInteractionMode={isSimpleGiftInteraction}
@@ -471,9 +506,9 @@ export default function App() {
       <section
         className="pointer-events-none absolute inset-0 z-10 overflow-hidden"
         style={{
-          paddingTop: `calc(var(--viewport-pad-top) + ${topReserve}px)`,
+          paddingTop: 'var(--viewport-pad-top)',
           paddingRight: `max(${outerSidePadding}, var(--viewport-pad-right))`,
-          paddingBottom: `calc(var(--viewport-pad-bottom) + ${bottomReserve}px)`,
+          paddingBottom: 'var(--viewport-pad-bottom)',
           paddingLeft: `max(${outerSidePadding}, var(--viewport-pad-left))`,
         }}
       >
@@ -532,11 +567,11 @@ export default function App() {
               <ReadingStageShell
                 compact={compactCards}
                 veryCompact={isVeryCompactViewport}
-                eyebrow="Begin reading"
-                title="The first page"
-                note="Start gently here, before the photos begin turning like pages."
+                eyebrow="A gentle note"
+                title="Thirty feels so gentle on you."
+                note="A quiet page before the rest."
               >
-                <IntroOverlay text={birthdayContent.story.before.text} variant="box-bottom" compact={compactCards} veryCompact={isVeryCompactViewport} />
+                <IntroOverlay mode="inline" text={birthdayContent.story.before.text} variant="from-box" compact={compactCards} veryCompact={isVeryCompactViewport} />
               </ReadingStageShell>
             </StageFrame>
           )}
@@ -548,9 +583,9 @@ export default function App() {
                 veryCompact={isVeryCompactViewport}
                 page={1}
                 total={storyPhotoTotal}
-                eyebrow="From the box"
-                title="The first photo page"
-                note="One card lifted out, then held still long enough to read."
+                eyebrow="For us, softly"
+                title="Whenever I think of us, I start here."
+                note="One of my favorite places to begin."
               >
                 <MemoryNote
                   compact={compactCards}
@@ -580,28 +615,17 @@ export default function App() {
                   veryCompact={isVeryCompactViewport}
                   page={index + 2}
                   total={storyPhotoTotal}
-                  eyebrow={memoryMoment.eyebrow ?? 'Photo page'}
+                  eyebrow={index === birthdayContent.story.memories.length - 2 ? 'one more page' : undefined}
                   title={
                     index === 0
-                      ? 'A warm page'
+                      ? 'Simple nights like this are still my favorite to keep.'
                       : index === 1
-                        ? 'Another page to keep'
+                        ? 'This still feels like my favorite version of us.'
                         : index === 2
-                          ? 'Still turning'
+                          ? 'You looked so steady here, and I was really proud of you.'
                           : index === 3
-                            ? 'One more page'
-                            : 'The last photo page'
-                  }
-                  note={
-                    index === 0
-                      ? 'The next photo should feel like a page turning in the same hand.'
-                      : index === 1
-                        ? 'Keep the rhythm slow and consistent here.'
-                        : index === 2
-                          ? 'Another page, same direction, same quiet pace.'
-                          : index === 3
-                            ? 'Let this one arrive like a page set down gently.'
-                            : 'This is the last photo page before the story turns inward again.'
+                            ? 'Still us, moving through life side by side.'
+                            : 'One more loud night, and still the two of us.'
                   }
                 >
                   <MemoryNote
@@ -613,11 +637,11 @@ export default function App() {
                     imageAlt={memoryMoment.imageAlt}
                     eyebrow={memoryMoment.eyebrow}
                     imagePresentation={
-                      index === 0 ? 'balanced' : index <= 2 ? 'balanced' : 'quiet'
+                      index === 1 ? 'hero' : 'quiet'
                     }
                     align={index % 2 === 1 ? 'right' : 'left'}
-                    imageLoading={index === 0 ? 'eager' : 'lazy'}
-                    imageFetchPriority={index === 0 ? 'high' : 'low'}
+                    imageLoading={index <= 1 ? 'eager' : 'lazy'}
+                    imageFetchPriority={index <= 1 ? 'high' : 'low'}
                   />
                 </StoryAlbumStage>
               </StageFrame>
@@ -629,9 +653,6 @@ export default function App() {
               <ReadingStageShell
                 compact={compactCards}
                 veryCompact={isVeryCompactViewport}
-                eyebrow="After the pages"
-                title="What stays after all of them"
-                note="The reading turns inward here, so the image should feel quieter than the album pages."
               >
                 <MemoryNote
                   compact={compactCards}
@@ -679,8 +700,8 @@ export default function App() {
               <ClosingStageShell
                 compact={compactCards}
                 veryCompact={isVeryCompactViewport}
-                eyebrow="Part one"
-                title="The first thing I want to leave with you"
+                eyebrow="A little love for you"
+                title="The part I wanted you to keep close."
                 progress="1 / 3"
               >
                 <MainBlessing compact={compactCards} veryCompact={isVeryCompactViewport} message={birthdayContent.blessing.reflection} variant="box-bottom" />
@@ -693,8 +714,6 @@ export default function App() {
               <ClosingStageShell
                 compact={compactCards}
                 veryCompact={isVeryCompactViewport}
-                eyebrow="Part two"
-                title="Then the wish I want to leave after it"
                 progress="2 / 3"
               >
                 <MainBlessing compact={compactCards} veryCompact={isVeryCompactViewport} message={birthdayContent.blessing.wish} variant="box-bottom" />
@@ -707,8 +726,7 @@ export default function App() {
               <ClosingStageShell
                 compact={compactCards}
                 veryCompact={isVeryCompactViewport}
-                eyebrow="Final note"
-                title="The card closes here"
+                eyebrow="with love"
                 progress="3 / 3"
               >
                 <FinalWish
@@ -800,6 +818,7 @@ const OpeningStage = React.memo(function OpeningStage({
     stageOverride === 'revealed' ? 'revealed' : 'idle',
   );
   const openTimerRef = React.useRef<number | null>(null);
+  const revealHoldMs = simpleInteractionMode ? 1100 : 1650;
 
   React.useEffect(() => {
     if (stageOverride !== 'revealed') {
@@ -809,7 +828,7 @@ const OpeningStage = React.memo(function OpeningStage({
     setAuthState('revealed');
     openTimerRef.current = window.setTimeout(() => {
       onOpen();
-    }, 950);
+    }, revealHoldMs);
 
     return () => {
       if (openTimerRef.current !== null) {
@@ -835,9 +854,11 @@ const OpeningStage = React.memo(function OpeningStage({
     setAuthState('scanning');
     openTimerRef.current = window.setTimeout(() => {
       setAuthState('revealed');
-      onOpen();
+      openTimerRef.current = window.setTimeout(() => {
+        onOpen();
+      }, revealHoldMs);
     }, simpleInteractionMode ? 760 : 1400);
-  }, [authState, onOpen, simpleInteractionMode, stageOverride]);
+  }, [authState, onOpen, revealHoldMs, simpleInteractionMode, stageOverride]);
 
   const statusCopy =
     authState === 'revealed'
@@ -856,7 +877,7 @@ const OpeningStage = React.memo(function OpeningStage({
           };
 
   return (
-    <motion.section
+      <motion.section
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -24 }}
@@ -882,22 +903,17 @@ const OpeningStage = React.memo(function OpeningStage({
         onClick={handleAuthenticate}
         disabled={authState !== 'idle'}
         whileTap={authState === 'idle' ? { scale: 0.985 } : undefined}
-        className="group relative w-full cursor-pointer overflow-hidden rounded-[1.8rem] border border-[#E6C98A]/16 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.08),transparent_52%),linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] px-3 py-3 text-left shadow-[0_20px_50px_rgba(0,0,0,0.22)]"
+        className="group relative w-full cursor-pointer overflow-hidden rounded-[1.95rem] bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.08),transparent_52%),linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] px-0 py-4 text-left shadow-[0_20px_50px_rgba(0,0,0,0.22)]"
         aria-label={birthdayContent.ui.openGiftAriaLabel}
       >
-        <div className={`relative mx-auto flex w-full items-center justify-center ${veryCompact ? 'h-[11.8rem]' : compact ? 'h-[14.6rem]' : 'h-[18rem]'}`}>
+        <div className={`relative mx-auto w-full ${veryCompact ? 'max-w-[11rem]' : compact ? 'max-w-[12.5rem]' : 'max-w-[15rem]'}`}>
           {!veryCompact && <div className="pointer-events-none absolute inset-x-[18%] top-[8%] h-[36%] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.08),transparent_68%)] blur-3xl" />}
           {!veryCompact && <div className="pointer-events-none absolute inset-x-[14%] bottom-[10%] h-[20%] rounded-full bg-[radial-gradient(circle,rgba(0,0,0,0.4),transparent_72%)] blur-3xl" />}
 
-          <div className={`relative z-[2] overflow-hidden rounded-[1.7rem] border border-white/10 bg-[linear-gradient(180deg,rgba(24,28,38,0.92),rgba(11,13,20,0.72))] shadow-[0_30px_72px_rgba(0,0,0,0.42)] backdrop-blur-2xl ${veryCompact ? 'w-[11rem] px-2.5 py-2.5' : compact ? 'w-[12.5rem] px-3 py-3' : 'w-[15rem] px-4 py-4'}`}>
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-12 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),transparent)]" />
-            <div className={`flex items-center justify-between ${veryCompact ? 'mb-2' : 'mb-3'}`}>
-              <span className="text-[0.54rem] font-medium uppercase tracking-[0.22em] text-white/72">Face ID</span>
-              <span className="text-[0.48rem] font-medium uppercase tracking-[0.16em] text-white/38">
-                {authState === 'revealed' ? 'Unlocked' : authState === 'scanning' ? 'Scanning' : 'Locked'}
-              </span>
-            </div>
-            <div className={`relative mx-auto flex aspect-square w-full items-center justify-center overflow-hidden rounded-[1.2rem] border border-white/12 bg-black/20 ${veryCompact ? 'max-w-[8.5rem]' : compact ? 'max-w-[9.5rem]' : 'max-w-[11rem]'}`}>
+          <div className="relative z-[2] overflow-hidden rounded-[1.75rem] bg-transparent">
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-12 bg-transparent" />
+            <div className="relative">
+              <div className={`relative mx-auto flex aspect-square w-full items-center justify-center overflow-hidden rounded-[1.5rem] border border-white/12 bg-black/20 ${veryCompact ? 'max-w-[8.8rem]' : compact ? 'max-w-[10rem]' : 'max-w-[11.5rem]'}`}>
               <img
                 src={content.featuredPhoto.image}
                 alt={content.featuredPhoto.imageAlt}
@@ -920,32 +936,43 @@ const OpeningStage = React.memo(function OpeningStage({
                 }
                 className="absolute left-3 right-3 h-[2px] rounded-full bg-[linear-gradient(90deg,rgba(255,255,255,0.2),rgba(255,255,255,0.92),rgba(255,255,255,0.2))]"
               />
-              <div className={`absolute left-4 top-4 h-4 w-4 rounded-tl-[0.55rem] border-l border-t transition-colors duration-500 ${authState === 'revealed' ? 'border-[#E6C98A]/80' : 'border-white/64'}`} />
-              <div className={`absolute right-4 top-4 h-4 w-4 rounded-tr-[0.55rem] border-r border-t transition-colors duration-500 ${authState === 'revealed' ? 'border-[#E6C98A]/80' : 'border-white/64'}`} />
-              <div className={`absolute bottom-4 left-4 h-4 w-4 rounded-bl-[0.55rem] border-b border-l transition-colors duration-500 ${authState === 'revealed' ? 'border-[#E6C98A]/80' : 'border-white/64'}`} />
-              <div className={`absolute bottom-4 right-4 h-4 w-4 rounded-br-[0.55rem] border-b border-r transition-colors duration-500 ${authState === 'revealed' ? 'border-[#E6C98A]/80' : 'border-white/64'}`} />
               <div className={`pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,transparent,rgba(6,8,14,0.62))] ${veryCompact ? 'h-10' : 'h-16'}`} />
               <div className={`absolute inset-x-0 flex justify-center ${veryCompact ? 'bottom-2.5' : 'bottom-4'}`}>
-                <div className={`rounded-full border border-white/10 bg-white/8 backdrop-blur-md ${veryCompact ? 'px-2 py-0.5' : 'px-3 py-1'}`}>
-                  <span className="text-[0.56rem] font-medium tracking-[0.18em] text-white/72">
-                    {authState === 'idle' ? 'PRIVATE GIFT' : authState === 'scanning' ? 'VERIFYING' : 'ACCESS GRANTED'}
+                <motion.div
+                  initial={false}
+                  animate={
+                    authState === 'scanning'
+                      ? { width: veryCompact ? 102 : compact ? 112 : 122 }
+                      : authState === 'revealed'
+                        ? { width: veryCompact ? 110 : compact ? 120 : 132 }
+                        : { width: veryCompact ? 96 : compact ? 106 : 116 }
+                  }
+                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                  className={`flex items-center justify-center gap-1.5 overflow-hidden rounded-full border border-white/12 bg-[linear-gradient(180deg,rgba(16,18,26,0.9),rgba(8,10,18,0.78))] shadow-[0_14px_30px_rgba(0,0,0,0.3)] backdrop-blur-xl ${veryCompact ? 'px-2 py-1.5' : 'px-2.5 py-1.5'}`}
+                >
+                  <div className="flex items-center gap-1">
+                    <span className={`h-1.5 w-1.5 rounded-full transition-colors duration-300 ${authState === 'idle' ? 'bg-white/82' : authState === 'revealed' ? 'bg-[#E6C98A]/88' : 'bg-white/26'}`} />
+                    <span className={`h-1.5 w-1.5 rounded-full transition-colors duration-300 ${authState === 'scanning' ? 'bg-white/92' : 'bg-white/18'}`} />
+                    <span className={`h-1.5 w-1.5 rounded-full transition-colors duration-300 ${authState === 'revealed' ? 'bg-[#E6C98A]/96' : 'bg-white/18'}`} />
+                  </div>
+                  <span className="whitespace-nowrap text-[0.52rem] font-medium tracking-[0.16em] text-white/74">
+                    {authState === 'idle' ? 'Take your time' : authState === 'scanning' ? 'Opening gently' : 'For you'}
                   </span>
-                </div>
+                </motion.div>
               </div>
             </div>
-            <div className={`flex items-center justify-between ${veryCompact ? 'mt-2.5' : 'mt-4'}`}>
-              <span className="text-[0.56rem] font-medium tracking-[0.02em] text-white/58">
+            </div>
+            <div className={`mt-3 flex flex-col items-center gap-1.5 text-center ${veryCompact ? 'px-1 py-1' : 'px-2 py-1.5'}`}>
+              <p className="m-0 text-[0.68rem] uppercase tracking-[0.22em] text-white/42">
+                {authState === 'idle' ? 'For you' : authState === 'scanning' ? 'Opening gently' : 'Ready for you'}
+              </p>
+              <p className="m-0 text-[0.78rem] leading-[1.5] text-[#F8F4EE]/72">
                 {authState === 'idle'
-                  ? 'Authenticate to open'
+                  ? 'I prepared a little something just for you.'
                   : authState === 'scanning'
-                    ? 'Authenticating'
-                    : 'Gift unlocked'}
-              </span>
-              <div className="flex items-center gap-1.5">
-                <span className={`h-1.5 w-1.5 rounded-full ${authState === 'idle' ? 'bg-white/86' : 'bg-white/16'}`} />
-                <span className={`h-1.5 w-1.5 rounded-full ${authState === 'scanning' ? 'bg-white/86' : 'bg-white/16'}`} />
-                <span className={`h-1.5 w-1.5 rounded-full ${authState === 'revealed' ? 'bg-[#E6C98A]/92' : 'bg-white/16'}`} />
-              </div>
+                    ? 'Let me open it gently for you.'
+                    : 'The first note is already waiting inside.'}
+              </p>
             </div>
           </div>
         </div>
@@ -953,11 +980,11 @@ const OpeningStage = React.memo(function OpeningStage({
 
       <div className={`w-full rounded-[1.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(12,12,18,0.72),rgba(12,12,18,0.44))] shadow-[0_20px_40px_rgba(0,0,0,0.2)] ${veryCompact ? 'px-3 py-3' : compact ? 'px-3.5 py-3.5' : 'px-4.5 py-4.5'}`}>
         <p className="m-0 text-[0.62rem] uppercase tracking-[0.28em] text-[#E4C27E]/84">
-          {simpleInteractionMode && authState === 'idle' ? 'Tap Face ID' : statusCopy.eyebrow}
+          {simpleInteractionMode && authState === 'idle' ? 'Take your time' : statusCopy.eyebrow}
         </p>
         <p className={`mt-2.5 m-0 text-[#F8F4EE]/80 ${veryCompact ? 'text-[0.78rem] leading-[1.44]' : compact ? 'text-[0.84rem] leading-[1.56]' : 'text-[0.92rem] leading-[1.72]'}`}>
           {simpleInteractionMode && authState === 'idle'
-            ? 'Authenticate first, then I will open the gift for you.'
+            ? 'Take your time, and I will open the gift I made for you.'
             : statusCopy.text}
         </p>
       </div>
@@ -1254,22 +1281,22 @@ const StoryGiftStage = React.memo(function StoryGiftStage({
       className={`relative mx-auto flex w-[min(88vw,23rem)] max-h-full min-h-0 flex-col items-start gap-3 rounded-[1.45rem] border border-[#E6C98A]/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.03))] text-left shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-lg ${veryCompact ? 'px-3 py-3' : compact ? 'px-3.5 py-3.5' : 'px-4.5 py-4.5'}`}
     >
       <span className="text-[0.62rem] uppercase tracking-[0.28em] text-[#E4C27E]">
-        Story begins here
+        A little note for you
       </span>
       <h2 className={`m-0 font-light italic font-serif tracking-[-0.02em] text-[#FFF8EE] ${veryCompact ? 'text-[1.08rem]' : compact ? 'text-[1.18rem]' : 'text-[1.35rem]'}`}>
-        {isOpening ? 'The note is lifting into the first line' : 'Look into the box'}
+        {isOpening ? 'one soft moment' : 'open it gently'}
       </h2>
       <p className={`m-0 text-[#F8F4EE]/82 ${veryCompact ? 'text-[0.76rem] leading-[1.4]' : compact ? 'text-[0.82rem] leading-[1.5]' : 'text-[0.9rem] leading-[1.62]'}`}>
         {isOpening
-          ? 'The first page is coming forward now.'
+          ? 'The first page is almost here.'
           : simpleInteractionMode
-            ? 'The first line is resting at the bottom of the box. Tap the note or give it a short upward pull to begin reading.'
-            : 'The first line is resting at the bottom of the box. Pull the note upward from there to begin reading.'}
+            ? 'Tap the note, or pull it up a little.'
+            : 'Pull the note up gently.'}
       </p>
       {!veryCompact && (
         <div className="mt-1 flex items-center gap-3 text-[0.66rem] uppercase tracking-[0.22em] text-[#C5A059]/74">
           <span className="inline-block h-[1px] w-10 bg-gradient-to-r from-[#C5A059]/55 to-transparent" />
-          <span>{isOpening ? 'Entering story' : simpleInteractionMode ? 'Tap or pull the note' : 'Pull the note from the box'}</span>
+          <span>{isOpening ? 'just a little longer' : simpleInteractionMode ? 'tap or pull' : 'pull gently'}</span>
         </div>
       )}
       <div className="mt-2 w-full">
@@ -1322,21 +1349,21 @@ const OpeningBridgeStage = React.memo(function OpeningBridgeStage({
       exit={{ opacity: 0, y: -18 }}
       transition={{ duration: 0.72, ease: [0.22, 1, 0.36, 1] }}
       style={{ maxHeight: 'var(--stage-max-height)' }}
-      className={`relative mx-auto flex w-[min(88vw,23rem)] max-h-full min-h-0 flex-col items-start gap-3 rounded-[1.45rem] border border-[#E6C98A]/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.03))] text-left shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-lg ${veryCompact ? 'px-3 py-3' : compact ? 'px-3.5 py-3.5' : 'px-4.5 py-4.5'}`}
+      className={`relative mx-auto flex w-[min(88vw,23rem)] max-h-full min-h-0 flex-col items-start ${veryCompact ? 'gap-3.5' : compact ? 'gap-4' : 'gap-5'} rounded-[1.45rem] border border-[#E6C98A]/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.03))] text-left shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-lg ${veryCompact ? 'px-3 py-3' : compact ? 'px-3.5 py-3.5' : 'px-4.5 py-4.5'}`}
     >
       <span className="text-[0.62rem] uppercase tracking-[0.28em] text-[#E4C27E]">
         Opening gently
       </span>
-      <h2 className={`m-0 font-light italic font-serif tracking-[-0.02em] text-[#FFF8EE] ${veryCompact ? 'text-[1.08rem]' : compact ? 'text-[1.18rem]' : 'text-[1.35rem]'}`}>
-        The first note is already inside
+      <h2 className={`m-0 max-w-[16rem] font-light italic font-serif tracking-[-0.02em] text-[#FFF8EE] ${veryCompact ? 'text-[1rem] leading-[1.22]' : compact ? 'text-[1.08rem] leading-[1.2]' : 'text-[1.2rem] leading-[1.16]'}`}>
+        The first note is waiting softly inside
       </h2>
-      <p className={`m-0 text-[#F8F4EE]/82 ${veryCompact ? 'text-[0.76rem] leading-[1.38]' : compact ? 'text-[0.82rem] leading-[1.48]' : 'text-[0.9rem] leading-[1.6]'}`}>
+      <p className={`m-0 mt-0.5 text-[#F8F4EE]/82 ${veryCompact ? 'text-[0.76rem] leading-[1.38]' : compact ? 'text-[0.82rem] leading-[1.48]' : 'text-[0.9rem] leading-[1.6]'}`}>
         {birthdayContent.opening.giftPrompt.bridgeText}
       </p>
       {!veryCompact && (
         <div className="mt-1 flex items-center gap-3 text-[0.66rem] uppercase tracking-[0.22em] text-[#C5A059]/74">
           <span className="inline-block h-[1px] w-10 bg-gradient-to-r from-[#C5A059]/55 to-transparent" />
-          <span>Moving into the first page</span>
+          <span>Softly into the first page</span>
         </div>
       )}
     </motion.section>
@@ -1353,28 +1380,34 @@ const ReadingStageShell = React.memo(function ReadingStageShell({
 }: {
   compact: boolean;
   veryCompact: boolean;
-  eyebrow: string;
-  title: string;
+  eyebrow?: string;
+  title?: string;
   note?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="pointer-events-auto flex h-full items-center justify-center">
-      <div style={{ maxHeight: 'var(--stage-max-height)' }} className={`flex max-h-full min-h-0 w-full max-w-[24rem] flex-col items-start ${veryCompact ? 'gap-2' : compact ? 'gap-2.5' : 'gap-3.5'}`}>
-        <span className="text-[0.62rem] uppercase tracking-[0.28em] text-[#E4C27E]/82">
-          {eyebrow}
-        </span>
-        <div className={`flex w-full flex-col items-start ${veryCompact ? 'gap-1.5' : 'gap-2'}`}>
-          <h3 className={`m-0 font-light italic font-serif tracking-[-0.02em] text-[#FFF8EE] ${veryCompact ? 'text-[0.92rem]' : compact ? 'text-[1rem]' : 'text-[1.1rem]'}`}>
-            {title}
-          </h3>
-          {note && !veryCompact && (
-            <p className={`m-0 text-[#F8F4EE]/62 ${veryCompact ? 'text-[0.68rem] leading-[1.26]' : compact ? 'text-[0.74rem] leading-[1.34]' : 'text-[0.8rem] leading-[1.44]'}`}>
-              {note}
-            </p>
-          )}
-        </div>
-        <div className="min-h-0 w-full">{children}</div>
+    <div className={`pointer-events-auto flex h-full w-full ${compact || veryCompact ? 'items-start justify-stretch pt-1' : 'items-center justify-center'}`}>
+      <div style={{ maxHeight: 'var(--stage-max-height)' }} className={`flex max-h-full min-h-0 w-full ${veryCompact ? 'max-w-[20.75rem] gap-2 px-1' : compact ? 'max-w-[22.5rem] gap-2.5 px-1.5' : 'max-w-[24rem] gap-3.5'} flex-col items-start`}>
+        {eyebrow && (
+          <span className={`${veryCompact ? 'text-[0.55rem] tracking-[0.22em]' : 'text-[0.62rem] tracking-[0.28em]'} uppercase text-[#E4C27E]/82`}>
+            {eyebrow}
+          </span>
+        )}
+        {(title || (note && !veryCompact)) && (
+          <div className={`flex w-full flex-col items-start ${veryCompact ? 'gap-1.5' : 'gap-2'}`}>
+            {title && (
+              <h3 className={`m-0 font-light italic font-serif tracking-[-0.02em] text-[#FFF8EE] ${veryCompact ? 'text-[0.92rem]' : compact ? 'text-[1rem]' : 'text-[1.1rem]'}`}>
+                {title}
+              </h3>
+            )}
+            {note && !veryCompact && (
+              <p className={`m-0 text-[#F8F4EE]/62 ${veryCompact ? 'text-[0.68rem] leading-[1.26]' : compact ? 'text-[0.74rem] leading-[1.34]' : 'text-[0.8rem] leading-[1.44]'}`}>
+                {note}
+              </p>
+            )}
+          </div>
+        )}
+        <div className="relative min-h-0 w-full flex-1 pt-1">{children}</div>
       </div>
     </div>
   );
@@ -1394,38 +1427,52 @@ const StoryAlbumStage = React.memo(function StoryAlbumStage({
   veryCompact: boolean;
   page: number;
   total: number;
-  eyebrow: string;
-  title: string;
-  note: string;
+  eyebrow?: string;
+  title?: string;
+  note?: string;
   children: React.ReactNode;
 }) {
+  const headerHeightClass = veryCompact ? 'h-[5.2rem]' : compact ? 'h-[5.8rem]' : 'h-[6.4rem]';
+  const headerEyebrow =
+    eyebrow ??
+    (page === 1
+      ? 'for my baby'
+      : page === total
+        ? 'one more page'
+        : 'for us');
+  const headerTitle =
+    title ??
+    (page === 1
+      ? 'The first page I wanted you to see.'
+      : page === total
+        ? 'The last photo page before I say the rest.'
+        : 'Another little piece of us I wanted to keep.');
+
   return (
-    <div className="pointer-events-auto flex h-full items-center justify-center">
-      <div style={{ maxHeight: 'var(--stage-max-height)' }} className={`relative flex max-h-full min-h-0 w-full max-w-[24rem] flex-col items-start pb-3 ${veryCompact ? 'gap-2' : compact ? 'gap-2.5' : 'gap-3.5'}`}>
-        <div className="flex w-full items-center justify-between">
-          <span className="text-[0.62rem] uppercase tracking-[0.28em] text-[#E4C27E]/82">
-            {eyebrow}
-          </span>
-          <span className="text-[0.58rem] uppercase tracking-[0.24em] text-[#F8F4EE]/36">
-            Page {page} / {total}
-          </span>
-        </div>
-        <div className={`flex w-full items-start justify-between ${veryCompact ? 'gap-2' : 'gap-3'}`}>
-          <div className={`flex min-w-0 flex-col ${veryCompact ? 'gap-1.5' : 'gap-2'}`}>
-            <h3 className={`m-0 font-light italic font-serif tracking-[-0.02em] text-[#FFF8EE] ${veryCompact ? 'text-[0.9rem]' : compact ? 'text-[0.98rem]' : 'text-[1.08rem]'}`}>
-              {title}
-            </h3>
-            {!veryCompact && (
-              <p className={`m-0 text-[#F8F4EE]/62 ${compact ? 'text-[0.72rem] leading-[1.32]' : 'text-[0.78rem] leading-[1.42]'}`}>
-                {note}
-              </p>
-            )}
+    <div className={`pointer-events-auto flex h-full w-full ${compact || veryCompact ? 'items-start justify-stretch pt-1' : 'items-center justify-center'}`}>
+      <div style={{ maxHeight: 'var(--stage-max-height)' }} className={`relative flex max-h-full min-h-0 w-full ${veryCompact ? 'max-w-[20.75rem] gap-2 px-1 pb-2' : compact ? 'max-w-[22.5rem] gap-2.5 px-1.5 pb-2' : 'max-w-[24rem] gap-3.5 pb-3'} flex-col items-start`}>
+        <div className={`${headerHeightClass} flex w-full flex-col justify-start`}>
+          <div className="flex w-full items-center justify-between">
+            <span className={`${veryCompact ? 'text-[0.55rem] tracking-[0.2em]' : 'text-[0.62rem] tracking-[0.28em]'} uppercase text-[#E4C27E]/82`}>
+              {headerEyebrow}
+            </span>
+            <span className={`${veryCompact ? 'text-[0.52rem] tracking-[0.18em]' : 'text-[0.58rem] tracking-[0.24em]'} uppercase text-[#F8F4EE]/36`}>
+              {page} / {total}
+            </span>
           </div>
-          <div className="flex shrink-0 items-center gap-1.5 pt-1">
+          <p className={`m-0 ${veryCompact ? 'mt-1 min-h-[1.9rem] text-[0.78rem] leading-[1.22]' : compact ? 'mt-1.5 min-h-[2.2rem] text-[0.86rem] leading-[1.28]' : 'mt-1.5 min-h-[2.4rem] text-[0.95rem] leading-[1.34]'} overflow-hidden font-light italic font-serif tracking-[-0.01em] text-[#FFF8EE]/90`}>
+            {headerTitle}
+          </p>
+          {note && !veryCompact && (
+            <p className={`m-0 mt-1 text-[#F8F4EE]/58 ${compact ? 'text-[0.72rem] leading-[1.3]' : 'text-[0.78rem] leading-[1.4]'}`}>
+              {note}
+            </p>
+          )}
+          <div className={`${veryCompact ? 'mt-1.5 gap-1' : 'mt-2 gap-1.5'} flex w-full items-center`}>
             {Array.from({ length: total }, (_value, index) => (
               <span
                 key={index}
-                className={`block h-[3px] rounded-full ${index + 1 === page ? (veryCompact ? 'w-6 bg-[#E4C27E]/88' : 'w-8 bg-[#E4C27E]/88') : (veryCompact ? 'w-3 bg-white/14' : 'w-4 bg-white/14')}`}
+                className={`block h-[3px] rounded-full transition-[width,background-color] duration-300 ${index + 1 === page ? (veryCompact ? 'w-6 bg-[#E4C27E]/88' : compact ? 'w-7 bg-[#E4C27E]/88' : 'w-8 bg-[#E4C27E]/88') : (veryCompact ? 'w-3 bg-white/14' : compact ? 'w-3.5 bg-white/14' : 'w-4 bg-white/14')}`}
               />
             ))}
           </div>
@@ -1450,26 +1497,36 @@ const ClosingStageShell = React.memo(function ClosingStageShell({
 }: {
   compact: boolean;
   veryCompact: boolean;
-  eyebrow: string;
-  title: string;
+  eyebrow?: string;
+  title?: string;
   progress: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="pointer-events-auto flex h-full items-center justify-center">
-      <div style={{ maxHeight: 'var(--stage-max-height)' }} className={`flex max-h-full min-h-0 w-full max-w-[28rem] flex-col items-start ${veryCompact ? 'gap-2.5' : compact ? 'gap-3' : 'gap-4'}`}>
-        <div className="flex w-full items-center justify-between">
-          <span className="text-[0.62rem] uppercase tracking-[0.28em] text-[#E4C27E]/82">
-            {eyebrow}
+    <div className={`pointer-events-auto flex h-full w-full ${compact || veryCompact ? 'items-start justify-stretch pt-1' : 'items-center justify-center'}`}>
+      <div
+        style={{ maxHeight: 'var(--stage-max-height)' }}
+        className={`relative flex max-h-full min-h-0 w-full ${veryCompact ? 'max-w-[21rem] gap-2.5 px-1' : compact ? 'max-w-[23rem] gap-3 px-1.5' : 'max-w-[28rem] gap-4'} flex-col items-start`}
+      >
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(230,201,138,0.42),transparent)]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-[linear-gradient(90deg,transparent,rgba(230,201,138,0.18),transparent)]" />
+        {!veryCompact && <div className="pointer-events-none absolute left-3 top-3 h-4 w-4 border-l border-t border-[#E6C98A]/28" />}
+        {!veryCompact && <div className="pointer-events-none absolute right-3 top-3 h-4 w-4 border-r border-t border-[#E6C98A]/28" />}
+        <div className="relative z-10 flex w-full items-center justify-between">
+          <span className={`${veryCompact ? 'text-[0.55rem] tracking-[0.2em]' : 'text-[0.62rem] tracking-[0.28em]'} uppercase text-[#E4C27E]/82`}>
+            {eyebrow ?? ''}
           </span>
-          <span className="text-[0.58rem] uppercase tracking-[0.24em] text-[#F8F4EE]/34">
+          <span className={`${veryCompact ? 'text-[0.52rem] tracking-[0.18em]' : 'text-[0.58rem] tracking-[0.24em]'} uppercase text-[#F8F4EE]/34`}>
             {progress}
           </span>
         </div>
-        <h3 className={`m-0 font-light italic font-serif tracking-[-0.02em] text-[#FFF8EE] ${veryCompact ? 'text-[0.98rem]' : compact ? 'text-[1.04rem]' : 'text-[1.16rem]'}`}>
-          {title}
-        </h3>
-        <div className="min-h-0 w-full">{children}</div>
+        <div className="relative z-10 h-[1px] w-16 bg-gradient-to-r from-[#C5A059]/65 to-transparent" />
+        {title && (
+          <h3 className={`relative z-10 m-0 font-light italic font-serif tracking-[-0.02em] text-[#FFF8EE] ${veryCompact ? 'text-[0.98rem]' : compact ? 'text-[1.04rem]' : 'text-[1.16rem]'}`}>
+            {title}
+          </h3>
+        )}
+        <div className="relative z-10 min-h-0 w-full flex-1">{children}</div>
       </div>
     </div>
   );
@@ -1713,7 +1770,7 @@ const ClosingGiftStage = React.memo(function ClosingGiftStage({
                 className={`${veryCompact ? 'text-[1.9rem]' : compact ? 'text-[2.2rem]' : 'text-[2.7rem]'} leading-none text-[#F6CFD6] drop-shadow-[0_0_24px_rgba(246,207,214,0.32)]`}
                 aria-hidden="true"
               >
-                ♥
+                {'♥'}
               </motion.div>
               <div className="flex flex-col items-center gap-1">
                 <span className={`font-serif italic tracking-[0.04em] text-[#FFF4F6] ${veryCompact ? 'text-[1rem]' : compact ? 'text-[1.14rem]' : 'text-[1.34rem]'}`}>
@@ -1926,3 +1983,5 @@ const MusicToggle = React.memo(function MusicToggle({
     </motion.button>
   );
 });
+
+

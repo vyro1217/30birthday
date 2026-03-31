@@ -60,7 +60,7 @@ export const FinalWish = memo(function FinalWish({
         className={`pointer-events-none absolute rounded-[999px] border border-white/8 ${isBoxBottom ? 'right-1 top-6 h-14 w-20' : 'right-2 top-8 h-[4.5rem] w-24'}`}
       />}
 
-      <div className="flex max-h-full min-h-0 flex-col gap-3">
+      <div className="relative z-10 flex max-h-full min-h-0 flex-col gap-3">
         {image ? (
           <motion.div
             initial={{ opacity: 0, y: 16, scale: 0.98 }}
@@ -69,6 +69,7 @@ export const FinalWish = memo(function FinalWish({
             className="relative overflow-hidden rounded-[1.2rem] border border-white/10 shadow-[0_18px_40px_rgba(0,0,0,0.32)]"
           >
             <div className="absolute inset-0 z-10 bg-[linear-gradient(180deg,rgba(6,8,14,0.04),rgba(6,8,14,0.2)_58%,rgba(6,8,14,0.48))]" />
+            <div className="absolute inset-[0.45rem] z-10 rounded-[0.9rem] border border-[#F6CFD6]/14" />
             <img
               src={image}
               alt={imageAlt ?? 'A memory photo'}
@@ -88,12 +89,14 @@ export const FinalWish = memo(function FinalWish({
           {text}
         </motion.p>
       </div>
-      <motion.div
-        initial={{ opacity: 0, scaleX: 0 }}
-        animate={{ opacity: 0.3, scaleX: 1 }}
-        transition={{ delay: 0.18, duration: 0.7 }}
-        className={`h-[1px] bg-gradient-to-l from-transparent via-[#C5A059] to-transparent ${isBoxBottom ? 'ml-0 mt-8 w-14' : 'ml-auto mt-10 w-16 sm:mt-12 sm:w-24'}`}
-      />
+      <div className="relative z-10">
+        <motion.div
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{ opacity: 0.3, scaleX: 1 }}
+          transition={{ delay: 0.18, duration: 0.7 }}
+          className={`h-[1px] bg-gradient-to-l from-transparent via-[#C5A059] to-transparent ${isBoxBottom ? 'ml-0 mt-8 w-14' : 'ml-auto mt-10 w-16 sm:mt-12 sm:w-24'}`}
+        />
+      </div>
     </motion.div>
   );
 });

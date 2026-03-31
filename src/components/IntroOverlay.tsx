@@ -48,9 +48,9 @@ export const IntroOverlay = memo(function IntroOverlay({
         }
         transition={{ duration: isFromBox || isBoxBottom ? 1.15 : 1.05, ease: [0.22, 1, 0.36, 1] }}
         style={isBoxBottom ? { maxHeight: 'var(--stage-max-height)' } : undefined}
-        className={`relative flex min-h-0 flex-col items-start ${veryCompact ? 'gap-2.5' : compact ? 'gap-3' : 'gap-5'} ${isBoxBottom ? `${veryCompact ? 'w-[min(86vw,21rem)] rounded-[1.3rem] px-3 py-3' : 'w-[min(88vw,23rem)] rounded-[1.45rem] px-4 py-4 sm:px-5 sm:py-5'} max-h-full overflow-hidden border border-[#E6C98A]/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.03))] shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-lg` : 'max-w-[min(88vw,24rem)]'}`}
+        className={`relative flex min-h-0 w-full flex-col items-start ${veryCompact ? 'gap-2.5' : compact ? 'gap-3' : 'gap-5'} ${isBoxBottom ? `${veryCompact ? 'max-w-[20.75rem] rounded-[1.15rem] px-3 py-3' : compact ? 'max-w-[22.5rem] rounded-[1.2rem] px-3.5 py-3.5' : 'max-w-[23rem] rounded-[1.45rem] px-4 py-4 sm:px-5 sm:py-5'} max-h-full overflow-hidden border border-[#E6C98A]/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.03))] shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-lg` : 'max-w-[24rem]'}`}
       >
-        {!veryCompact && (
+        {!compact && !veryCompact && (
         <motion.div
           aria-hidden="true"
           initial={{ opacity: 0, scale: 0.96 }}
@@ -67,7 +67,7 @@ export const IntroOverlay = memo(function IntroOverlay({
         </motion.div>
         )}
 
-        {!veryCompact && (
+        {!compact && !veryCompact && (
         <motion.div
           aria-hidden="true"
           initial={{ opacity: 0 }}
@@ -81,32 +81,34 @@ export const IntroOverlay = memo(function IntroOverlay({
         />
         )}
 
-        {!veryCompact && (isFromBox || isBoxBottom) && (
+        {!compact && !veryCompact && (isFromBox || isBoxBottom) && (
           <motion.div
             aria-hidden="true"
             initial={{ opacity: 0, y: 26, scaleX: 0.72 }}
             animate={{ opacity: 1, y: 0, scaleX: 1 }}
             exit={{ opacity: 0, y: -12, scaleX: 0.84 }}
             transition={{ duration: 0.95, ease: [0.22, 1, 0.36, 1], delay: 0.08 }}
-            className={`pointer-events-none absolute left-2 top-[-1.9rem] h-10 rounded-t-[1.4rem] border border-[#E6C98A]/10 border-b-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.01))] ${isBoxBottom ? 'w-[8.6rem]' : 'w-[10.5rem]'}`}
+            className={`pointer-events-none absolute left-2 top-[-1.9rem] h-10 rounded-t-[1.4rem] border border-[#E6C98A]/10 border-b-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] ${isBoxBottom ? 'w-[8.6rem]' : 'w-[10.5rem]'}`}
           />
         )}
 
         {/* Editorial Accent Line */}
-        <div className="w-12 h-[1px] bg-gradient-to-r from-[#C5A059]/60 to-transparent" />
+        <div className="relative z-10 flex w-full flex-col items-start gap-3">
+          <div className={`${compact || veryCompact ? 'w-9' : 'w-12'} h-[1px] bg-gradient-to-r from-[#C5A059]/45 to-transparent`} />
 
-        <p className={`min-h-0 overflow-y-auto overscroll-contain pr-1 text-left ${veryCompact ? 'text-[clamp(0.82rem,3vw,0.9rem)] leading-[1.46] tracking-[0.01em]' : compact ? 'text-[clamp(0.88rem,3.3vw,0.96rem)] leading-[1.54] tracking-[0.02em]' : 'text-[clamp(0.96rem,4vw,1.04rem)] leading-[1.88] tracking-[0.05em]'} font-light italic font-serif break-words [overflow-wrap:anywhere] text-transparent bg-clip-text bg-gradient-to-br from-[#F8F4EE] via-[#F8F4EE] to-[#F8F4EE]/40`}>
-          {text}
-        </p>
+          <p className={`min-h-0 overflow-y-auto overscroll-contain pr-1 text-left ${veryCompact ? 'text-[clamp(0.84rem,3vw,0.92rem)] leading-[1.5] tracking-[0.01em]' : compact ? 'text-[clamp(0.9rem,3.3vw,0.98rem)] leading-[1.58] tracking-[0.015em]' : 'text-[clamp(0.96rem,4vw,1.04rem)] leading-[1.88] tracking-[0.05em]'} font-light italic font-serif break-words whitespace-pre-line [overflow-wrap:anywhere] text-transparent bg-clip-text bg-gradient-to-br from-[#F8F4EE] via-[#F8F4EE] to-[#F8F4EE]/40`}>
+            {text}
+          </p>
+        </div>
 
         {/* Subtle Bottom Accent */}
-        <div className="flex items-center gap-3">
+        <div className={`relative z-10 flex items-center ${compact || veryCompact ? 'gap-2.5' : 'gap-3'}`}>
           <div className="w-1 h-1 rounded-full bg-[#C5A059]/30" />
-          <div className="w-8 h-[1px] bg-gradient-to-r from-[#C5A059]/20 to-transparent" />
+          <div className={`${compact || veryCompact ? 'w-6' : 'w-8'} h-[1px] bg-gradient-to-r from-[#C5A059]/20 to-transparent`} />
         </div>
         
         {/* Subtle Background Glow - Shifted for asymmetry */}
-        {!veryCompact && <div className="absolute -left-12 top-1/2 -translate-y-1/2 -z-10 w-64 h-64 bg-[radial-gradient(circle_at_50%_50%,#C5A059/0.03_0%,transparent_70%)] blur-3xl" />}
+        {!compact && !veryCompact && <div className="absolute -left-12 top-1/2 -translate-y-1/2 -z-10 w-64 h-64 bg-[radial-gradient(circle_at_50%_50%,#C5A059/0.03_0%,transparent_70%)] blur-3xl" />}
       </motion.div>
     </motion.div>
   );
