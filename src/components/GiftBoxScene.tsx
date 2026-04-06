@@ -59,6 +59,8 @@ export const GiftBoxScene = memo(function GiftBoxScene({
   const pointLightRef = useRef<THREE.PointLight>(null);
   const storyGiftGlowRef = useRef<THREE.PointLight>(null);
   const storyGiftPullVisualRef = useRef(0);
+  const storyGiftEnteredAtRef = useRef<number | null>(null);
+  const previousStepRef = useRef<BirthdayStep>(step);
   const detachStoryGiftListenersRef = useRef<(() => void) | null>(null);
   const detachBridgeGiftListenersRef = useRef<(() => void) | null>(null);
   const detachClosingGiftListenersRef = useRef<(() => void) | null>(null);
@@ -127,22 +129,22 @@ export const GiftBoxScene = memo(function GiftBoxScene({
     const isWide = size.width >= 960;
 
     return {
-      boxGroupY: isVeryShort ? 0.08 : isShort ? 0.06 : 0.04,
-      boxGroupZ: isWide ? 0.06 : isCompact ? 0.08 : 0.1,
-      boxScale: isVeryShort ? 0.98 : isCompact ? 1 : 1.03,
+      boxGroupY: -0.12,
+      boxGroupZ: isWide ? 0.02 : 0.03,
+      boxScale: isVeryShort ? 0.855 : isCompact ? 0.874 : 0.95,
       openingScaleBoost: isNarrow ? 0.03 : 0.04,
-      focusScaleBoost: isNarrow ? 0.05 : 0.065,
-      walletLift: isCompact ? 0.16 : 0.2,
-      walletPush: isCompact ? 0.18 : 0.24,
-      idleCameraY: isVeryShort ? 1.02 : isCompact ? 1.06 : 0.96,
+      focusScaleBoost: isNarrow ? 0.045 : 0.058,
+      walletLift: isCompact ? 0.24 : 0.24,
+      walletPush: isCompact ? 0.31 : 0.31,
+      idleCameraY: isVeryShort ? 0.86 : isCompact ? 0.9 : 0.88,
       idleCameraZ: isVeryShort ? 6.45 : isCompact ? 6.28 : isWide ? 5.45 : 5.8,
-      idleCameraRotX: isVeryShort ? -0.36 : isCompact ? -0.4 : -0.38,
+      idleCameraRotX: isVeryShort ? -0.29 : isCompact ? -0.32 : -0.31,
       revealCameraY: isVeryShort ? 1.96 : isCompact ? 2.02 : 1.76,
       revealCameraZ: isVeryShort ? 4.9 : isCompact ? 4.74 : 4.26,
       revealCameraRotX: isVeryShort ? -0.52 : isCompact ? -0.56 : -0.54,
-      focusCameraY: isVeryShort ? 2.08 : isCompact ? 2.16 : 1.98,
-      focusCameraZ: isVeryShort ? 4.36 : isCompact ? 4.18 : 3.82,
-      focusCameraRotX: isVeryShort ? -0.58 : isCompact ? -0.62 : -0.6,
+      focusCameraY: isVeryShort ? 1.98 : isCompact ? 2.02 : 1.92,
+      focusCameraZ: isVeryShort ? 3.82 : isCompact ? 3.68 : 3.58,
+      focusCameraRotX: isVeryShort ? -0.545 : isCompact ? -0.585 : -0.58,
     };
   }, [size.height, size.width]);
 
@@ -229,9 +231,9 @@ export const GiftBoxScene = memo(function GiftBoxScene({
         step === 'ready'
           ? Math.sin(t * 0.72) * 0.05
           : isBridgeStep
-            ? Math.sin(t * 0.58) * 0.012
+            ? 0
           : isGiftPhase
-            ? Math.sin(t * 0.58) * 0.03
+            ? 0
             : isTextStep
               ? Math.sin(t * 0.5) * 0.015
               : 0;
@@ -398,7 +400,7 @@ export const GiftBoxScene = memo(function GiftBoxScene({
         0.84 +
         seamProgress * 0.03 +
         peekProgress * 0.08 +
-        heroProgress * (storyGiftWalletFocused ? 0.22 : 0.12);
+        heroProgress * (storyGiftWalletFocused ? 0.28 : 0.12);
       insertCardRef.current.scale.lerp(new THREE.Vector3(walletScale, walletScale, walletScale), 0.14);
 
       lidGroupRef.current.rotation.x = THREE.MathUtils.lerp(
@@ -456,35 +458,56 @@ export const GiftBoxScene = memo(function GiftBoxScene({
         0.14,
       );
 
+      const enteredAt = storyGiftEnteredAtRef.current;
+      const isCameraLockWindowActive = enteredAt !== null && performance.now() - enteredAt < 300;
+      const revealBlend = isCameraLockWindowActive ? 0 : THREE.MathUtils.clamp((visualPull - 0.12) / 0.28, 0, 1);
+      const revealCameraY = THREE.MathUtils.lerp(
+        storyGiftViewportProfile.idleCameraY,
+        storyGiftViewportProfile.revealCameraY,
+        revealBlend,
+      );
+      const revealCameraZ = THREE.MathUtils.lerp(
+        storyGiftViewportProfile.idleCameraZ,
+        storyGiftViewportProfile.revealCameraZ,
+        revealBlend,
+      );
+      const revealCameraRotX = THREE.MathUtils.lerp(
+        storyGiftViewportProfile.idleCameraRotX,
+        storyGiftViewportProfile.revealCameraRotX,
+        revealBlend,
+      );
       const cameraTargetX = 0;
       const cameraTargetY =
         (storyGiftWalletFocused
           ? storyGiftViewportProfile.focusCameraY
-          : storyGiftViewportProfile.revealCameraY) +
+          : revealCameraY) +
         seamProgress * 0.08 +
         peekProgress * 0.18 +
         heroProgress * (storyGiftWalletFocused ? 0.22 : 0.18);
       const cameraTargetZ =
         (storyGiftWalletFocused
           ? storyGiftViewportProfile.focusCameraZ
-          : storyGiftViewportProfile.revealCameraZ) -
+          : revealCameraZ) -
         seamProgress * 0.04 -
         peekProgress * 0.1 -
         heroProgress * (storyGiftWalletFocused ? 0.18 : 0.14);
       const cameraRotX =
         (storyGiftWalletFocused
           ? storyGiftViewportProfile.focusCameraRotX
-          : storyGiftViewportProfile.revealCameraRotX) -
+          : revealCameraRotX) -
         seamProgress * 0.02 -
         peekProgress * 0.04 -
         heroProgress * (storyGiftWalletFocused ? 0.04 : 0.03);
       const cameraRotY = 0;
       const cameraRotZ = -0.02;
+      const resolvedCameraTargetY = isCameraLockWindowActive ? storyGiftViewportProfile.idleCameraY : cameraTargetY;
+      const resolvedCameraTargetZ = isCameraLockWindowActive ? storyGiftViewportProfile.idleCameraZ : cameraTargetZ;
+      const resolvedCameraRotX = isCameraLockWindowActive ? storyGiftViewportProfile.idleCameraRotX : cameraRotX;
 
       camera.position.x = THREE.MathUtils.lerp(camera.position.x, cameraTargetX, 0.08);
-      camera.position.y = THREE.MathUtils.lerp(camera.position.y, cameraTargetY, 0.08);
-      camera.position.z = THREE.MathUtils.lerp(camera.position.z, cameraTargetZ, 0.08);
-      camera.rotation.x = THREE.MathUtils.lerp(camera.rotation.x, cameraRotX, 0.08);
+      camera.position.y = THREE.MathUtils.lerp(camera.position.y, resolvedCameraTargetY, 0.08);
+      camera.position.z = THREE.MathUtils.lerp(camera.position.z, resolvedCameraTargetZ, 0.08);
+      camera.rotation.x = THREE.MathUtils.lerp(camera.rotation.x, resolvedCameraRotX, 0.08);
       camera.rotation.y = THREE.MathUtils.lerp(camera.rotation.y, cameraRotY, 0.08);
       camera.rotation.z = THREE.MathUtils.lerp(camera.rotation.z, cameraRotZ, 0.08);
 
@@ -775,51 +798,67 @@ export const GiftBoxScene = memo(function GiftBoxScene({
   }, [step]);
 
   useEffect(() => {
+    if (step === 'story-gift') {
+      storyGiftEnteredAtRef.current = performance.now();
+      return;
+    }
+
+    storyGiftEnteredAtRef.current = null;
+  }, [step]);
+
+  useEffect(() => {
     if (step !== 'story-gift' || storyGiftPhase !== 'idle') {
       return;
     }
 
+    const cameFromBridge = previousStepRef.current === 'opening-bridge';
     storyGiftPullVisualRef.current = 0;
 
-    if (groupRef.current) {
+    if (groupRef.current && !cameFromBridge) {
       groupRef.current.position.set(0, storyGiftViewportProfile.boxGroupY, storyGiftViewportProfile.boxGroupZ);
       groupRef.current.scale.setScalar(storyGiftViewportProfile.boxScale);
     }
 
-    if (boxGroupRef.current) {
+    if (boxGroupRef.current && !cameFromBridge) {
       boxGroupRef.current.rotation.set(-0.05, 0, 0);
       boxGroupRef.current.position.set(0, -0.01, 0);
     }
 
-    if (lidGroupRef.current) {
+    if (lidGroupRef.current && !cameFromBridge) {
       lidGroupRef.current.rotation.set(0, 0, 0);
       lidGroupRef.current.position.set(0, 0.48, -1.08);
     }
 
-    if (insertCardRef.current) {
+    if (insertCardRef.current && !cameFromBridge) {
       insertCardRef.current.position.set(0, -0.34, 0.14);
       insertCardRef.current.rotation.set(0.08, 0.22, -0.04);
       insertCardRef.current.scale.setScalar(0.84);
     }
 
-    if (storyGiftGlowRef.current) {
+    if (storyGiftGlowRef.current && !cameFromBridge) {
       storyGiftGlowRef.current.intensity = 0.35;
       storyGiftGlowRef.current.distance = 2.2;
       storyGiftGlowRef.current.position.set(0, 0.22, -0.02);
       storyGiftGlowRef.current.color.set('#FFE7F1');
     }
 
-    camera.position.set(
-      0,
-      storyGiftViewportProfile.idleCameraY,
-      storyGiftViewportProfile.idleCameraZ,
-    );
-    camera.rotation.set(
-      storyGiftViewportProfile.idleCameraRotX,
-      0,
-      -0.02,
-    );
+    if (!cameFromBridge) {
+      camera.position.set(
+        0,
+        storyGiftViewportProfile.idleCameraY,
+        storyGiftViewportProfile.idleCameraZ,
+      );
+      camera.rotation.set(
+        storyGiftViewportProfile.idleCameraRotX,
+        0,
+        -0.02,
+      );
+    }
   }, [camera.position, camera.rotation, storyGiftViewportProfile, step, storyGiftPhase]);
+
+  useEffect(() => {
+    previousStepRef.current = step;
+  }, [step]);
 
   useEffect(() => {
     if (step !== 'opening-bridge') {
@@ -910,8 +949,8 @@ export const GiftBoxScene = memo(function GiftBoxScene({
           y: 0,
           z: -0.02,
         },
-        0.9,
-        'power3.inOut',
+        1.05,
+        'power2.out',
       );
     } else if (isReadingBackgroundPhase || isTextStep) {
       tweenCamera(
@@ -1149,16 +1188,16 @@ export const GiftBoxScene = memo(function GiftBoxScene({
     if (step === 'opening-bridge' && groupRef.current) {
       gsap.to(groupRef.current.position, {
         x: 0,
-        y: -0.04,
-        z: 0.02,
+        y: storyGiftViewportProfile.boxGroupY,
+        z: storyGiftViewportProfile.boxGroupZ,
         duration: 0.9,
         ease: 'power2.out',
         overwrite: 'auto',
       });
       gsap.to(groupRef.current.scale, {
-        x: 1.02,
-        y: 1.02,
-        z: 1.02,
+        x: storyGiftViewportProfile.boxScale,
+        y: storyGiftViewportProfile.boxScale,
+        z: storyGiftViewportProfile.boxScale,
         duration: 0.9,
         ease: 'power2.out',
         overwrite: 'auto',

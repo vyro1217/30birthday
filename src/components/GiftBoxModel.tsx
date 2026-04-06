@@ -50,13 +50,13 @@ const champagneMaterial = {
 };
 
 const bambooWalletMaterial = {
-  color: '#5E8960',
-  roughness: 0.5,
-  metalness: 0.08,
-  clearcoat: 0.38,
-  clearcoatRoughness: 0.22,
-  emissive: '#29422C',
-  emissiveIntensity: 0.08,
+  color: '#6B9A6E',
+  roughness: 0.42,
+  metalness: 0.1,
+  clearcoat: 0.46,
+  clearcoatRoughness: 0.16,
+  emissive: '#35563B',
+  emissiveIntensity: 0.12,
 };
 
 export const GiftBoxModel = memo(function GiftBoxModel({
@@ -203,28 +203,28 @@ export const GiftBoxModel = memo(function GiftBoxModel({
         </group>
 
         <group ref={insertCardRef} position={[0, -0.22, 0.18]}>
-          <RoundedBox args={[1.18, 0.12, 0.82]} radius={0.08} smoothness={roundedSmoothness}>
+          <RoundedBox args={[1.24, 0.13, 0.88]} radius={0.08} smoothness={roundedSmoothness}>
             <meshPhysicalMaterial {...bambooWalletMaterial} />
           </RoundedBox>
-          <RoundedBox args={[1.06, 0.05, 0.72]} radius={0.06} smoothness={roundedSmoothness} position={[0, 0.055, 0.02]}>
-            <meshPhysicalMaterial color="#719C6C" roughness={0.44} metalness={0.06} clearcoat={0.28} clearcoatRoughness={0.24} />
+          <RoundedBox args={[1.12, 0.055, 0.78]} radius={0.06} smoothness={roundedSmoothness} position={[0, 0.06, 0.02]}>
+            <meshPhysicalMaterial color="#7DAC79" roughness={0.36} metalness={0.08} clearcoat={0.34} clearcoatRoughness={0.2} />
           </RoundedBox>
-          <Box args={[1.08, 0.014, 0.05]} position={[0, 0.05, 0.38]}>
-            <meshPhysicalMaterial color="#E5C47A" metalness={0.72} roughness={0.18} emissive="#A77A29" emissiveIntensity={0.14} />
+          <Box args={[1.14, 0.016, 0.055]} position={[0, 0.054, 0.41]}>
+            <meshPhysicalMaterial color="#EBCB82" metalness={0.74} roughness={0.16} emissive="#B48733" emissiveIntensity={0.16} />
           </Box>
-          <Box args={[0.3, 0.03, 0.08]} position={[0, 0.08, 0.4]}>
-            <meshPhysicalMaterial color="#F3D892" metalness={0.66} roughness={0.16} emissive="#C0923F" emissiveIntensity={0.16} />
+          <Box args={[0.34, 0.036, 0.09]} position={[0, 0.085, 0.43]}>
+            <meshPhysicalMaterial color="#F7DE9E" metalness={0.68} roughness={0.14} emissive="#C79B46" emissiveIntensity={0.18} />
           </Box>
-          <group position={[0, 0.09, 0.08]}>
-            {[-0.22, -0.07, 0.08, 0.23].map((xOffset) => (
-              <Box key={xOffset} args={[0.02, 0.008, 0.62]} position={[xOffset, 0, 0]}>
-                <meshStandardMaterial color="#446B45" roughness={0.72} metalness={0.02} />
+          <group position={[0, 0.098, 0.08]}>
+            {[-0.24, -0.08, 0.08, 0.24].map((xOffset) => (
+              <Box key={xOffset} args={[0.024, 0.01, 0.68]} position={[xOffset, 0, 0]}>
+                <meshStandardMaterial color="#3F6642" roughness={0.66} metalness={0.03} />
               </Box>
             ))}
           </group>
-          <group position={[-0.38, 0.09, -0.16]}>
-            <Torus args={[0.06, 0.012, torusRadialSegments, torusTubularSegments]} rotation={[Math.PI / 2, 0, 0]}>
-              <meshPhysicalMaterial color="#DFC27B" metalness={0.85} roughness={0.16} />
+          <group position={[-0.4, 0.098, -0.17]}>
+            <Torus args={[0.07, 0.013, torusRadialSegments, torusTubularSegments]} rotation={[Math.PI / 2, 0, 0]}>
+              <meshPhysicalMaterial color="#E5C983" metalness={0.86} roughness={0.14} emissive="#9F7630" emissiveIntensity={0.08} />
             </Torus>
           </group>
         </group>
