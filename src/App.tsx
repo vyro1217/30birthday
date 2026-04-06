@@ -15,7 +15,7 @@ import { MainBlessing } from './components/MainBlessing';
 import { MemoryNote } from './components/MemoryNote';
 import { FinalWish } from './components/FinalWish';
 import { StageFrame } from './components/StageFrame';
-import { BirthdayStep } from './types/birthday';
+import { BirthdayStep, StoryGiftPhase } from './types/birthday';
 
 import { ChevronLeft, ChevronRight, Volume2, VolumeX } from 'lucide-react';
 
@@ -265,7 +265,7 @@ export default function App() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [experienceMode, setExperienceMode] = useState<ExperienceMode>(getInitialExperienceMode);
   const [hasPrimedFullScene, setHasPrimedFullScene] = useState(false);
-  const [isStoryGiftOpening, setIsStoryGiftOpening] = useState(false);
+  const [storyGiftPhase, setStoryGiftPhase] = useState<StoryGiftPhase>('idle');
   const [storyGiftPullDistance, setStoryGiftPullDistance] = useState(0);
   const [lockedReadingStageHeight, setLockedReadingStageHeight] = useState<number | null>(null);
   const prefersReducedMotion = useReducedMotion();
@@ -430,31 +430,40 @@ export default function App() {
   }, [backgroundAudio, openGift]);
 
   const handleStoryGiftOpen = React.useCallback(() => {
-    if (step !== 'story-gift' || isStoryGiftOpening) {
+    if (step !== 'story-gift' || storyGiftPhase !== 'idle') {
       return;
     }
 
-    setIsStoryGiftOpening(true);
+    setStoryGiftPhase('opening');
     setStoryGiftPullDistance(148);
-    window.setTimeout(() => {
-      continueStep();
-    }, 520);
-  }, [continueStep, isStoryGiftOpening, step]);
+  }, [step, storyGiftPhase]);
+
+  const handleStoryGiftConfirm = React.useCallback(() => {
+    if (step !== 'story-gift' || storyGiftPhase === 'idle') {
+      return;
+    }
+
+    if (storyGiftPhase !== 'wallet-focus') {
+      return;
+    }
+
+    continueStep();
+  }, [continueStep, step, storyGiftPhase]);
 
   const handleStoryGiftPullChange = React.useCallback(
     (distance: number) => {
-      if (step !== 'story-gift' || isStoryGiftOpening) {
+      if (step !== 'story-gift' || storyGiftPhase !== 'idle') {
         return;
       }
 
       setStoryGiftPullDistance(Math.max(0, Math.min(148, distance)));
     },
-    [isStoryGiftOpening, step],
+    [step, storyGiftPhase],
   );
 
   const handleStoryGiftPullEnd = React.useCallback(
     (distance: number) => {
-      if (step !== 'story-gift' || isStoryGiftOpening) {
+      if (step !== 'story-gift' || storyGiftPhase !== 'idle') {
         return;
       }
 
@@ -466,7 +475,7 @@ export default function App() {
 
       setStoryGiftPullDistance(0);
     },
-    [handleStoryGiftOpen, isSimpleGiftInteraction, isStoryGiftOpening, step],
+    [handleStoryGiftOpen, isSimpleGiftInteraction, step, storyGiftPhase],
   );
 
   const handleReopenFromClosing = React.useCallback(() => {
@@ -474,22 +483,37 @@ export default function App() {
       return;
     }
 
-    setIsStoryGiftOpening(false);
+    setStoryGiftPhase('idle');
     setStoryGiftPullDistance(0);
     goToStep('opening-bridge');
   }, [goToStep, step]);
 
   useEffect(() => {
-    if (step !== 'story-gift' && isStoryGiftOpening) {
-      setIsStoryGiftOpening(false);
+    if (step !== 'story-gift' && storyGiftPhase !== 'idle') {
+      setStoryGiftPhase('idle');
     }
-  }, [isStoryGiftOpening, step]);
+  }, [step, storyGiftPhase]);
 
   useEffect(() => {
     if (step !== 'story-gift' && storyGiftPullDistance !== 0) {
       setStoryGiftPullDistance(0);
     }
   }, [step, storyGiftPullDistance]);
+
+  useEffect(() => {
+    if (step !== 'story-gift' || storyGiftPhase !== 'opening') {
+      return;
+    }
+
+    const settleDelay = prefersReducedMotion ? 420 : 900;
+    const focusTimer = window.setTimeout(() => {
+      setStoryGiftPhase((currentPhase) => (currentPhase === 'opening' ? 'wallet-focus' : currentPhase));
+    }, settleDelay);
+
+    return () => {
+      window.clearTimeout(focusTimer);
+    };
+  }, [prefersReducedMotion, step, storyGiftPhase]);
 
   return (
     <main
@@ -561,10 +585,11 @@ export default function App() {
                 step={step}
                 onSceneFailure={handleSceneFailure}
                 simpleInteractionMode={isSimpleGiftInteraction}
-                storyGiftOpening={isStoryGiftOpening}
+                storyGiftPhase={storyGiftPhase}
                 storyGiftPullProgress={Math.min(storyGiftPullDistance / 148, 1)}
                 onStoryGiftPullChange={handleStoryGiftPullChange}
                 onStoryGiftPullEnd={handleStoryGiftPullEnd}
+                onStoryGiftConfirm={handleStoryGiftConfirm}
                 onClosingGiftOpen={handleReopenFromClosing}
               />
             </Suspense>
@@ -591,9 +616,15 @@ export default function App() {
                 paddingBottom: `${bottomReserve}px`,
               }}
             >
-          {step === 'opening-bridge' && (
-            <StageFrame key="opening-bridge" availableHeight={usableStageHeight} anchor="bottom">
-              <OpeningBridgeStage compact={compactCards} veryCompact={isVeryCompactViewport} />
+          {(step === 'opening-bridge' || step === 'story-gift') && (
+            <StageFrame key="gift-prompt-stage" availableHeight={usableStageHeight} anchor="bottom">
+              <StoryGiftStage
+                compact={compactCards}
+                veryCompact={isVeryCompactViewport}
+                simpleInteractionMode={isSimpleGiftInteraction}
+                pullProgress={Math.min(storyGiftPullDistance / 148, 1)}
+                phase={step === 'opening-bridge' ? 'bridge' : storyGiftPhase}
+              />
             </StageFrame>
           )}
 
@@ -623,18 +654,6 @@ export default function App() {
                   onContinue={continueStep}
                 />
               </div>
-            </StageFrame>
-          )}
-
-          {step === 'story-gift' && (
-            <StageFrame key="story-gift" availableHeight={usableStageHeight} anchor="bottom">
-              <StoryGiftStage
-                compact={compactCards}
-                veryCompact={isVeryCompactViewport}
-                simpleInteractionMode={isSimpleGiftInteraction}
-                pullProgress={Math.min(storyGiftPullDistance / 148, 1)}
-                isOpening={isStoryGiftOpening}
-              />
             </StageFrame>
           )}
 
@@ -1270,44 +1289,44 @@ const GiftRibbonStage = React.memo(function GiftRibbonStage({
             initial={false}
             animate={{
               opacity: phase === 'resting' ? 0 : 1,
-              y: phase === 'idle' ? 0 : phase === 'untying' ? -6 : -18,
-              scale: phase === 'idle' ? 1 : 0.96,
+              y: phase === 'idle' ? 0 : phase === 'untying' ? -10 : -24,
+              scale: phase === 'idle' ? 1 : 0.94,
             }}
-              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              className={`relative mx-auto ${veryCompact ? 'h-[8.2rem] w-[12rem]' : compact ? 'h-[9.4rem] w-[13.4rem]' : 'h-[10.4rem] w-[15rem]'}`}
-            >
-              <motion.div
-                initial={false}
-                animate={{ x: -22 * bowSpread, rotate: -34 * bowSpread, y: 8 * bowSpread, opacity: phase === 'resting' ? 0 : 1 }}
-                transition={{ duration: 0.68, ease: [0.22, 1, 0.36, 1] }}
-                className="absolute left-[2.4rem] top-[1.5rem] h-6 w-10 rounded-[999px] border border-[#E6C98A]/55 bg-[linear-gradient(180deg,#F8EED2,#D4AF37)] shadow-[0_10px_22px_rgba(0,0,0,0.22)]"
-              />
-              <motion.div
-                initial={false}
-                animate={{ x: 22 * bowSpread, rotate: 34 * bowSpread, y: 8 * bowSpread, opacity: phase === 'resting' ? 0 : 1 }}
-                transition={{ duration: 0.68, ease: [0.22, 1, 0.36, 1] }}
-                className="absolute right-[2.4rem] top-[1.5rem] h-6 w-10 rounded-[999px] border border-[#E6C98A]/55 bg-[linear-gradient(180deg,#F8EED2,#D4AF37)] shadow-[0_10px_22px_rgba(0,0,0,0.22)]"
-              />
-              <motion.div
-                initial={false}
-                animate={{ x: -34 * bowSpread, y: 30 * bowSpread, rotate: -48 * bowSpread, opacity: phase === 'resting' ? 0 : 0.9 }}
-                transition={{ duration: 0.72, ease: [0.22, 1, 0.36, 1] }}
-                className="absolute left-[4.6rem] top-[2.6rem] h-[3.8rem] w-[1rem] rounded-[999px] bg-[linear-gradient(180deg,#F5E9C8,#C5A059)] shadow-[0_0_18px_rgba(197,160,89,0.22)]"
-              />
-              <motion.div
-                initial={false}
-                animate={{ x: 34 * bowSpread, y: 30 * bowSpread, rotate: 48 * bowSpread, opacity: phase === 'resting' ? 0 : 0.9 }}
-                transition={{ duration: 0.72, ease: [0.22, 1, 0.36, 1] }}
-                className="absolute right-[4.6rem] top-[2.6rem] h-[3.8rem] w-[1rem] rounded-[999px] bg-[linear-gradient(180deg,#F5E9C8,#C5A059)] shadow-[0_0_18px_rgba(197,160,89,0.22)]"
-              />
-              <motion.div
-                initial={false}
-                animate={{ scale: phase === 'idle' ? 1 : 0.88, opacity: phase === 'resting' ? 0 : 1, y: phase === 'idle' ? 0 : -4 }}
-                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="absolute left-1/2 top-[0.95rem] h-8 w-5 -translate-x-1/2 rounded-full border border-[#E6C98A]/55 bg-[radial-gradient(circle_at_50%_45%,rgba(248,244,238,0.95),rgba(197,160,89,0.92))] shadow-[0_8px_18px_rgba(0,0,0,0.26)]"
-              />
-            </motion.div>
-          </div>
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className={`relative mx-auto ${veryCompact ? 'h-[8.2rem] w-[12rem]' : compact ? 'h-[9.4rem] w-[13.4rem]' : 'h-[10.4rem] w-[15rem]'}`}
+          >
+            <motion.div
+              initial={false}
+              animate={{ x: -28 * bowSpread, rotate: -42 * bowSpread, y: 12 * bowSpread, opacity: phase === 'resting' ? 0 : 1 }}
+              transition={{ duration: 0.68, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute left-[2.2rem] top-[1.35rem] h-6 w-11 rounded-[999px] border border-[#F4E7CE]/55 bg-[linear-gradient(180deg,#FFF0D4,#DDB060)] shadow-[0_10px_22px_rgba(0,0,0,0.22)]"
+            />
+            <motion.div
+              initial={false}
+              animate={{ x: 28 * bowSpread, rotate: 42 * bowSpread, y: 12 * bowSpread, opacity: phase === 'resting' ? 0 : 1 }}
+              transition={{ duration: 0.68, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute right-[2.2rem] top-[1.35rem] h-6 w-11 rounded-[999px] border border-[#F4E7CE]/55 bg-[linear-gradient(180deg,#FFF0D4,#DDB060)] shadow-[0_10px_22px_rgba(0,0,0,0.22)]"
+            />
+            <motion.div
+              initial={false}
+              animate={{ x: -42 * bowSpread, y: 34 * bowSpread, rotate: -58 * bowSpread, opacity: phase === 'resting' ? 0 : 0.9 }}
+              transition={{ duration: 0.72, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute left-[4.55rem] top-[2.5rem] h-[4rem] w-[1rem] rounded-[999px] bg-[linear-gradient(180deg,#FAEBCB,#D6A958)] shadow-[0_0_18px_rgba(214,169,88,0.22)]"
+            />
+            <motion.div
+              initial={false}
+              animate={{ x: 42 * bowSpread, y: 34 * bowSpread, rotate: 58 * bowSpread, opacity: phase === 'resting' ? 0 : 0.9 }}
+              transition={{ duration: 0.72, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute right-[4.55rem] top-[2.5rem] h-[4rem] w-[1rem] rounded-[999px] bg-[linear-gradient(180deg,#FAEBCB,#D6A958)] shadow-[0_0_18px_rgba(214,169,88,0.22)]"
+            />
+            <motion.div
+              initial={false}
+              animate={{ scale: phase === 'idle' ? 1 : 0.84, opacity: phase === 'resting' ? 0 : 1, y: phase === 'idle' ? 0 : -8 }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute left-1/2 top-[0.88rem] h-8 w-5 -translate-x-1/2 rounded-full border border-[#F4E7CE]/55 bg-[radial-gradient(circle_at_50%_45%,rgba(255,248,238,0.96),rgba(214,169,88,0.92))] shadow-[0_8px_18px_rgba(0,0,0,0.26)]"
+            />
+          </motion.div>
+        </div>
 
         </motion.div>
       </div>
@@ -1344,63 +1363,113 @@ const StoryGiftStage = React.memo(function StoryGiftStage({
   veryCompact,
   simpleInteractionMode,
   pullProgress,
-  isOpening,
+  phase,
 }: {
   compact: boolean;
   veryCompact: boolean;
   simpleInteractionMode: boolean;
   pullProgress: number;
-  isOpening: boolean;
+  phase: StoryGiftPhase | 'bridge';
 }) {
+  const isBridge = phase === 'bridge';
+  const isOpening = phase === 'opening';
+  const isWalletFocus = phase === 'wallet-focus';
+  const eyebrow = isWalletFocus ? 'your gift is here' : isBridge ? 'Opening gently' : 'for you';
+  const title = isWalletFocus ? 'there it is' : isBridge ? 'hold this moment gently' : isOpening ? 'stay with me for one second' : 'pull gently';
+  const body = isWalletFocus
+    ? 'The box settles first, then the wallet comes forward naturally.'
+    : isBridge
+      ? birthdayContent.opening.giftPrompt.bridgeText
+      : isOpening
+        ? 'I want this moment to feel a little slower.'
+        : simpleInteractionMode
+          ? 'Tap or pull upward a little.'
+          : 'Pull upward gently.';
+  const statusLabel = isWalletFocus
+    ? 'gift revealed'
+    : isBridge
+      ? 'slowly, with love'
+      : isOpening
+        ? 'almost there'
+        : simpleInteractionMode
+          ? 'tap or pull'
+          : 'pull gently';
+  const progressValue = isBridge ? 0 : isWalletFocus ? 100 : Math.round(pullProgress * 100);
+  const contentKey = `${phase}:${statusLabel}`;
+
   return (
     <motion.section
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -16 }}
+      initial={{ opacity: 0, y: 12, scale: 0.988, filter: 'blur(6px)' }}
+      animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+      exit={{ opacity: 0, y: -8, scale: 0.994, filter: 'blur(5px)' }}
+      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
       style={{ maxHeight: 'var(--stage-max-height)' }}
-      className={`relative mx-auto flex w-[min(88vw,23rem)] max-h-full min-h-0 flex-col items-start gap-3 rounded-[1.45rem] border border-[#E6C98A]/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.03))] text-left shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-lg ${veryCompact ? 'px-3 py-3' : compact ? 'px-3.5 py-3.5' : 'px-4.5 py-4.5'}`}
+      className={`relative mx-auto flex w-[min(88vw,23rem)] max-h-full min-h-0 flex-col items-start gap-3 overflow-hidden rounded-[1.45rem] border text-left shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-lg ${
+        isWalletFocus
+          ? 'border-[#E6C98A]/24 bg-[linear-gradient(180deg,rgba(18,25,15,0.92),rgba(7,10,8,0.82))]'
+          : 'border-[#E6C98A]/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.03))]'
+      } ${veryCompact ? 'px-3 py-3' : compact ? 'px-3.5 py-3.5' : 'px-4.5 py-4.5'}`}
     >
-      <span className="text-[0.62rem] uppercase tracking-[0.28em] text-[#E4C27E]">
-        for you
-      </span>
-      <h2 className={`m-0 font-light italic font-serif tracking-[-0.02em] text-[#FFF8EE] ${veryCompact ? 'text-[1.08rem]' : compact ? 'text-[1.18rem]' : 'text-[1.35rem]'}`}>
-        {isOpening ? 'stay with me for one second' : 'pull gently'}
-      </h2>
-      <p className={`m-0 text-[#F8F4EE]/82 ${veryCompact ? 'text-[0.76rem] leading-[1.4]' : compact ? 'text-[0.82rem] leading-[1.5]' : 'text-[0.9rem] leading-[1.62]'}`}>
-        {isOpening
-          ? 'I want this moment to feel a little slower.'
-          : simpleInteractionMode
-            ? 'Tap or pull upward a little.'
-            : 'Pull upward gently.'}
-      </p>
-      {!veryCompact && (
-        <div className="mt-1 flex items-center gap-3 text-[0.66rem] uppercase tracking-[0.22em] text-[#C5A059]/74">
-          <span className="inline-block h-[1px] w-10 bg-gradient-to-r from-[#C5A059]/55 to-transparent" />
-          <span>{isOpening ? 'almost there' : simpleInteractionMode ? 'tap or pull' : 'pull gently'}</span>
-        </div>
+      {isWalletFocus && (
+        <>
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(229,196,122,0.22),transparent_70%)]" />
+          <div className="pointer-events-none absolute -right-8 top-4 h-24 w-24 rounded-full border border-[#E6C98A]/12" />
+          <div className="pointer-events-none absolute -left-10 bottom-3 h-28 w-28 rounded-full bg-[radial-gradient(circle,rgba(122,156,108,0.18),transparent_68%)] blur-xl" />
+        </>
       )}
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.div
+          key={contentKey}
+          initial={{ opacity: 0, y: 10, filter: 'blur(8px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, y: -8, filter: 'blur(6px)' }}
+          transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+          className="flex w-full flex-col items-start gap-3"
+        >
+          <span className="text-[0.62rem] uppercase tracking-[0.28em] text-[#E4C27E]">
+            {eyebrow}
+          </span>
+          <h2 className={`m-0 font-light italic font-serif tracking-[-0.02em] text-[#FFF8EE] ${veryCompact ? 'text-[1.08rem]' : compact ? 'text-[1.18rem]' : 'text-[1.35rem]'}`}>
+            {title}
+          </h2>
+          <p className={`m-0 text-[#F8F4EE]/82 ${veryCompact ? 'text-[0.76rem] leading-[1.4]' : compact ? 'text-[0.82rem] leading-[1.5]' : 'text-[0.9rem] leading-[1.62]'}`}>
+            {body}
+          </p>
+          {!veryCompact && (
+            <div className="mt-1 flex items-center gap-3 text-[0.66rem] uppercase tracking-[0.22em] text-[#C5A059]/74">
+              <span className="inline-block h-[1px] w-10 bg-gradient-to-r from-[#C5A059]/55 to-transparent" />
+              <span>{statusLabel}</span>
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
       <div className="mt-2 w-full">
         <div className="h-[3px] overflow-hidden rounded-full bg-white/8">
           <motion.div
             initial={false}
-            animate={{ width: `${Math.max(8, pullProgress * 100)}%` }}
-            transition={{ duration: isOpening ? 0.3 : 0.18, ease: [0.22, 1, 0.36, 1] }}
+            animate={{ width: `${Math.max(8, isWalletFocus ? 100 : pullProgress * 100)}%` }}
+            transition={{ duration: isBridge ? 0.28 : isOpening || isWalletFocus ? 0.3 : 0.18, ease: [0.22, 1, 0.36, 1] }}
             className="h-full rounded-full bg-[linear-gradient(90deg,rgba(228,194,126,0.45),rgba(248,244,238,0.92),rgba(228,194,126,0.45))]"
           />
         </div>
-        {!isOpening && (
+        {!isOpening && !isBridge && (
           <div className="mt-2 flex items-center justify-between gap-3">
             {!veryCompact && (
               <p className={`m-0 text-[#F8F4EE]/54 ${compact ? 'text-[0.72rem] leading-[1.38]' : 'text-[0.78rem] leading-[1.44]'}`}>
-                {simpleInteractionMode ? 'Tap or pull upward slightly.' : 'Drag upward on the note.'}
+                {isWalletFocus
+                  ? 'The wallet stays here. Interact with the 3D gift box when you are ready.'
+                  : simpleInteractionMode
+                    ? 'Tap or pull upward slightly.'
+                    : 'Drag upward on the note.'}
               </p>
             )}
             <span className={`shrink-0 uppercase tracking-[0.2em] text-[#E4C27E]/78 ${veryCompact ? 'text-[0.56rem]' : 'text-[0.62rem]'}`}>
-              {Math.round(pullProgress * 100)}%
+              {progressValue}%
             </span>
           </div>
         )}
       </div>
+
       <AnimatePresence>
         {isOpening && (
           <motion.div
@@ -1411,41 +1480,6 @@ const StoryGiftStage = React.memo(function StoryGiftStage({
           />
         )}
       </AnimatePresence>
-    </motion.section>
-  );
-});
-
-const OpeningBridgeStage = React.memo(function OpeningBridgeStage({
-  compact,
-  veryCompact,
-}: {
-  compact: boolean;
-  veryCompact: boolean;
-}) {
-  return (
-    <motion.section
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -18 }}
-      transition={{ duration: 0.72, ease: [0.22, 1, 0.36, 1] }}
-      style={{ maxHeight: 'var(--stage-max-height)' }}
-      className={`relative mx-auto flex w-[min(88vw,23rem)] max-h-full min-h-0 flex-col items-start ${veryCompact ? 'gap-3.5' : compact ? 'gap-4' : 'gap-5'} rounded-[1.45rem] border border-[#E6C98A]/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.03))] text-left shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-lg ${veryCompact ? 'px-3 py-3' : compact ? 'px-3.5 py-3.5' : 'px-4.5 py-4.5'}`}
-    >
-      <span className="text-[0.62rem] uppercase tracking-[0.28em] text-[#E4C27E]">
-        Opening gently
-      </span>
-      <h2 className={`m-0 max-w-[16rem] font-light italic font-serif tracking-[-0.02em] text-[#FFF8EE] ${veryCompact ? 'text-[1rem] leading-[1.22]' : compact ? 'text-[1.08rem] leading-[1.2]' : 'text-[1.2rem] leading-[1.16]'}`}>
-        hold this moment gently
-      </h2>
-      <p className={`m-0 mt-0.5 text-[#F8F4EE]/82 ${veryCompact ? 'text-[0.76rem] leading-[1.38]' : compact ? 'text-[0.82rem] leading-[1.48]' : 'text-[0.9rem] leading-[1.6]'}`}>
-        {birthdayContent.opening.giftPrompt.bridgeText}
-      </p>
-      {!veryCompact && (
-        <div className="mt-1 flex items-center gap-3 text-[0.66rem] uppercase tracking-[0.22em] text-[#C5A059]/74">
-          <span className="inline-block h-[1px] w-10 bg-gradient-to-r from-[#C5A059]/55 to-transparent" />
-          <span>slowly, with love</span>
-        </div>
-      )}
     </motion.section>
   );
 });

@@ -23,6 +23,8 @@ export type BirthdayStep =
   | 'final'
   | 'closing-gift';
 
+export type StoryGiftPhase = 'idle' | 'opening' | 'wallet-focus';
+
 export interface BirthdayGiftPromptContent {
   hint: string;
   transition?: string;

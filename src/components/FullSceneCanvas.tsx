@@ -1,7 +1,7 @@
 import React, { Suspense, useEffect } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { GiftBoxScene } from './GiftBoxScene';
-import { BirthdayStep } from '../types/birthday';
+import { BirthdayStep, StoryGiftPhase } from '../types/birthday';
 
 type SceneMode =
   | 'none'
@@ -18,10 +18,11 @@ interface FullSceneCanvasProps {
   step: BirthdayStep;
   onSceneFailure: () => void;
   simpleInteractionMode?: boolean;
-  storyGiftOpening?: boolean;
+  storyGiftPhase?: StoryGiftPhase;
   storyGiftPullProgress?: number;
   onStoryGiftPullChange?: (distance: number) => void;
   onStoryGiftPullEnd?: (distance: number) => void;
+  onStoryGiftConfirm?: () => void;
   onClosingGiftOpen?: () => void;
 }
 
@@ -103,10 +104,11 @@ export const FullSceneCanvas = React.memo(function FullSceneCanvas({
   step,
   onSceneFailure,
   simpleInteractionMode = false,
-  storyGiftOpening = false,
+  storyGiftPhase = 'idle',
   storyGiftPullProgress = 0,
   onStoryGiftPullChange,
   onStoryGiftPullEnd,
+  onStoryGiftConfirm,
   onClosingGiftOpen,
 }: FullSceneCanvasProps) {
   const dpr: [number, number] =
@@ -159,10 +161,11 @@ export const FullSceneCanvas = React.memo(function FullSceneCanvas({
           sceneMode={sceneMode}
           step={step}
           simpleInteractionMode={simpleInteractionMode}
-          storyGiftOpening={storyGiftOpening}
+          storyGiftPhase={storyGiftPhase}
           storyGiftPullProgress={storyGiftPullProgress}
           onStoryGiftPullChange={onStoryGiftPullChange}
           onStoryGiftPullEnd={onStoryGiftPullEnd}
+          onStoryGiftConfirm={onStoryGiftConfirm}
           onClosingGiftOpen={onClosingGiftOpen}
         />
       </Suspense>
