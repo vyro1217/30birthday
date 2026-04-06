@@ -1,9 +1,10 @@
-import React, { useRef, useEffect, memo, useMemo } from 'react';
+import React, { Suspense, useRef, useEffect, memo, useMemo } from 'react';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
-import { Box, Float, Stars, Sphere, Sparkles, Torus, RoundedBox } from '@react-three/drei';
+import { Float, Sparkles, Sphere, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { BirthdayStep } from '../types/birthday';
+import { GiftBoxModel } from './GiftBoxModel';
 
 type SceneMode =
   | 'none'
@@ -23,6 +24,13 @@ interface GiftBoxProps {
   onStoryGiftPullEnd?: (distance: number) => void;
   onClosingGiftOpen?: () => void;
 }
+
+const loadGiftBoxTimelineLayer = () =>
+  import('./GiftBoxTimelineLayer').then((module) => ({
+    default: module.GiftBoxTimelineLayer,
+  }));
+
+const GiftBoxTimelineLayer = React.lazy(loadGiftBoxTimelineLayer);
 
 export const GiftBoxScene = memo(function GiftBoxScene({
   sceneMode,
@@ -84,6 +92,7 @@ export const GiftBoxScene = memo(function GiftBoxScene({
   const isClosingPhase = sceneMode === 'closing-gift';
   const showSecondaryStars = isTimelinePhase;
   const showAmbientSparkles = isCosmicPhase || isTimelinePhase;
+  const shouldLoadTimelineLayer = isGiftPhase || isCosmicPhase || isTimelinePhase;
 
   const textSteps = useMemo(
     () => ['node-before', 'node-us', 'memory-1', 'memory-2', 'memory-3', 'memory-4', 'memory-5', 'node-now', 'node-thirty-soft', 'node-thirty-race', 'title', 'message', 'message2', 'final'],
@@ -95,10 +104,40 @@ export const GiftBoxScene = memo(function GiftBoxScene({
     [],
   );
 
-  const leftAnchorReadingSteps = useMemo(
-    () => ['node-before', 'node-now', 'node-thirty-soft', 'node-thirty-race', 'title', 'message', 'message2', 'final'],
+  const readingCornerPlacements = useMemo(
+    () =>
+      ({
+        'node-before': 'top-left',
+        'node-us': 'top-right',
+        'memory-1': 'bottom-right',
+        'memory-2': 'bottom-left',
+        'memory-3': 'top-left',
+        'memory-4': 'top-right',
+        'memory-5': 'bottom-right',
+        'node-now': 'bottom-left',
+        'node-thirty-soft': 'top-left',
+        'node-thirty-race': 'top-right',
+        title: 'bottom-right',
+        message: 'bottom-left',
+        message2: 'top-left',
+        final: 'top-right',
+      }) satisfies Partial<Record<BirthdayStep, 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'>>,
     [],
   );
+
+  useEffect(() => {
+    if (!shouldLoadTimelineLayer) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      void loadGiftBoxTimelineLayer();
+    }, isGiftPhase ? 220 : 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [isGiftPhase, shouldLoadTimelineLayer]);
 
     // Slow, gentle rotations
     useFrame((state) => {
@@ -377,10 +416,9 @@ export const GiftBoxScene = memo(function GiftBoxScene({
   }, [step]);
 
   useEffect(() => {
-    const ctx = gsap.context(() => {
-      const isBridgeStep = step === 'opening-bridge';
-      const isStoryGiftStep = step === 'story-gift';
-      const isClosingGiftStep = step === 'closing-gift';
+    const isBridgeStep = step === 'opening-bridge';
+    const isStoryGiftStep = step === 'story-gift';
+    const isClosingGiftStep = step === 'closing-gift';
 
       if (isStoryGiftStep) {
         gsap.to(camera.position, {
@@ -668,8 +706,8 @@ export const GiftBoxScene = memo(function GiftBoxScene({
 
     // Move box to the side when text steps are active
     const isTextStep = textSteps.includes(step);
-    const shouldMoveBoxToCorner = cornerBoxSteps.includes(step);
-    const shouldAnchorReadingBoxLeft = leftAnchorReadingSteps.includes(step);
+    const readingCornerPlacement = readingCornerPlacements[step];
+    const isReadingCornerStep = Boolean(readingCornerPlacement);
       if (step === 'story-gift' && groupRef.current) {
         gsap.to(groupRef.current.position, {
           x: 0,
@@ -724,68 +762,52 @@ export const GiftBoxScene = memo(function GiftBoxScene({
           overwrite: 'auto',
         });
       }
-    } else if (isReadingBackgroundPhase && groupRef.current) {
+    } else if ((isReadingBackgroundPhase || isReadingCornerStep) && groupRef.current) {
+      const isLeftCorner =
+        readingCornerPlacement === 'top-left' || readingCornerPlacement === 'bottom-left';
+      const isTopCorner =
+        readingCornerPlacement === 'top-left' || readingCornerPlacement === 'top-right';
+
       gsap.to(groupRef.current.position, {
-        x: shouldAnchorReadingBoxLeft
+        x: isLeftCorner
           ? isMobileViewport
-            ? -0.92
+            ? -1.18
             : -1.92
           : isMobileViewport
-            ? 0.98
+            ? 1.22
             : 2.08,
-        y: isMobileViewport ? 2.1 : 1.62,
-        z: isMobileViewport ? -1.95 : -1.45,
+        y: isTopCorner
+          ? isMobileViewport
+            ? 2.34
+            : 1.96
+          : isMobileViewport
+            ? -1.94
+            : -1.34,
+        z: isMobileViewport ? -2.18 : -1.45,
         duration: 1.55,
         ease: 'power3.inOut',
         overwrite: 'auto',
       });
       gsap.to(groupRef.current.scale, {
-        x: isMobileViewport ? 0.19 : 0.25,
-        y: isMobileViewport ? 0.19 : 0.25,
-        z: isMobileViewport ? 0.19 : 0.25,
+        x: isMobileViewport ? 0.16 : 0.25,
+        y: isMobileViewport ? 0.16 : 0.25,
+        z: isMobileViewport ? 0.16 : 0.25,
         duration: 1.55,
         ease: 'power3.inOut',
         overwrite: 'auto',
       });
       if (boxGroupRef.current) {
         gsap.to(boxGroupRef.current.rotation, {
-          x: -0.42,
-          y: shouldAnchorReadingBoxLeft
+          x: isTopCorner ? -0.48 : -0.28,
+          y: isLeftCorner
             ? isMobileViewport
               ? 0.34
               : 0.38
             : isMobileViewport
               ? -0.34
               : -0.38,
-          z: shouldAnchorReadingBoxLeft ? 0.06 : -0.06,
+          z: isLeftCorner ? 0.08 : -0.08,
           duration: 1.4,
-          ease: 'power3.inOut',
-          overwrite: 'auto',
-        });
-      }
-    } else if (shouldMoveBoxToCorner && groupRef.current) {
-      gsap.to(groupRef.current.position, {
-        x: isMobileViewport ? 1.35 : 3.3,
-        y: isMobileViewport ? 2.5 : 1.9,
-        z: isMobileViewport ? -1.7 : -0.45,
-        duration: 1.6,
-        ease: 'power3.inOut',
-        overwrite: 'auto',
-      });
-      gsap.to(groupRef.current.scale, {
-        x: isMobileViewport ? 0.28 : 0.38,
-        y: isMobileViewport ? 0.28 : 0.38,
-        z: isMobileViewport ? 0.28 : 0.38,
-        duration: 1.6,
-        ease: 'power3.inOut',
-        overwrite: 'auto',
-      });
-      if (boxGroupRef.current) {
-        gsap.to(boxGroupRef.current.rotation, {
-          x: -0.62,
-          y: isMobileViewport ? -0.32 : -0.44,
-          z: isMobileViewport ? -0.24 : -0.16,
-          duration: 1.45,
           ease: 'power3.inOut',
           overwrite: 'auto',
         });
@@ -875,12 +897,46 @@ export const GiftBoxScene = memo(function GiftBoxScene({
         overwrite: 'auto',
       });
     }
-    }, groupRef);
-
     return () => {
-      ctx.revert();
+      gsap.killTweensOf(camera.position);
+      gsap.killTweensOf(camera.rotation);
+
+      if (groupRef.current) {
+        gsap.killTweensOf(groupRef.current.position);
+        gsap.killTweensOf(groupRef.current.scale);
+      }
+
+      if (boxGroupRef.current) {
+        gsap.killTweensOf(boxGroupRef.current.rotation);
+        gsap.killTweensOf(boxGroupRef.current.position);
+      }
+
+      if (lidGroupRef.current) {
+        gsap.killTweensOf(lidGroupRef.current.rotation);
+        gsap.killTweensOf(lidGroupRef.current.position);
+      }
+
+      if (insertCardRef.current) {
+        gsap.killTweensOf(insertCardRef.current.position);
+        gsap.killTweensOf(insertCardRef.current.rotation);
+      }
+
+      if (coreRef.current) {
+        gsap.killTweensOf(coreRef.current.position);
+        gsap.killTweensOf(coreRef.current.scale);
+      }
+
+      if (tracksRef.current) {
+        gsap.killTweensOf(tracksRef.current.scale);
+        gsap.killTweensOf(tracksRef.current.rotation);
+      }
+
+      if (timelineGroupRef.current) {
+        gsap.killTweensOf(timelineGroupRef.current.position);
+        gsap.killTweensOf(timelineGroupRef.current.scale);
+      }
     };
-  }, [camera.position, camera.rotation, isMobileViewport, isReadingBackgroundPhase, leftAnchorReadingSteps, step, storyGiftOpening]);
+  }, [camera.position, camera.rotation, isMobileViewport, isReadingBackgroundPhase, readingCornerPlacements, step, storyGiftOpening]);
 
   const isTimelineActive = isCosmicPhase || isTimelinePhase;
 
@@ -919,354 +975,35 @@ export const GiftBoxScene = memo(function GiftBoxScene({
         floatIntensity={isReadingBackgroundPhase ? 0 : isGiftPhase ? 0.1 : isMobileViewport ? 0.16 : 0.32}
       >
         <group ref={groupRef}>
-          <group ref={boxGroupRef}>
-            {/* Box Base - Luxurious Polished Crystal with Iridescence & Gold Frame */}
-            <group position={[0, -0.25, 0]}>
-              <RoundedBox args={[2.1, 1.68, 2.1]} radius={0.08} smoothness={4}>
-                <meshPhysicalMaterial 
-                  color="#FFF8EE"
-                  transmission={0.82}
-                  thickness={1.4}
-                  roughness={0.08}
-                  metalness={0.05}
-                  ior={1.45} 
-                  clearcoat={1}
-                  clearcoatRoughness={0.06}
-                  transparent
-                  opacity={0.5}
-                  envMapIntensity={3.2}
-                  attenuationColor="#F7E9D1"
-                  attenuationDistance={4}
-                  emissive="#C5A059"
-                  emissiveIntensity={0.12} 
-                  iridescence={0.1}
-                  iridescenceIOR={1.25}
-                  sheen={0.22}
-                  sheenColor="#F8F4EE"
-                />
-              </RoundedBox>
-
-              <RoundedBox args={[1.78, 0.92, 1.78]} radius={0.06} smoothness={4} position={[0, -0.08, 0]}>
-                <meshStandardMaterial
-                  color="#2A1912"
-                  roughness={0.9}
-                  metalness={0.05}
-                />
-              </RoundedBox>
-
-              <RoundedBox args={[1.56, 0.52, 1.56]} radius={0.05} smoothness={4} position={[0, 0.14, 0]}>
-                <meshStandardMaterial
-                  color="#120D0A"
-                  roughness={0.96}
-                  metalness={0.02}
-                />
-              </RoundedBox>
-
-              <group ref={insertCardRef} position={[0, -0.36, 0.02]}>
-                <RoundedBox args={[1.22, 0.08, 1.02]} radius={0.03} smoothness={4}>
-                  <meshStandardMaterial color="#C08C57" roughness={0.92} metalness={0.04} />
-                </RoundedBox>
-                <RoundedBox args={[1.08, 0.04, 0.86]} radius={0.04} smoothness={4} position={[0, 0.055, 0]}>
-                  <meshPhysicalMaterial
-                    color="#FFF8EE"
-                    roughness={0.22}
-                    transmission={0.08}
-                    clearcoat={0.6}
-                    clearcoatRoughness={0.08}
-                  />
-                </RoundedBox>
-                <group position={[0, 0.085, 0]}>
-                  {[0.2, 0.08, -0.04, -0.16].map((zOffset, index) => (
-                    <Box
-                      key={zOffset}
-                      args={[index === 0 ? 0.62 : index === 1 ? 0.74 : index === 2 ? 0.68 : 0.56, 0.006, 0.028]}
-                      position={[0, 0, zOffset]}
-                    >
-                      <meshStandardMaterial
-                        color={step === 'story-gift' ? '#8B5E3C' : '#A6784D'}
-                        emissive={step === 'story-gift' ? '#E8D8BE' : '#000000'}
-                        emissiveIntensity={step === 'story-gift' ? 0.08 : 0}
-                        roughness={0.92}
-                        metalness={0.02}
-                      />
-                    </Box>
-                  ))}
-                  <Box args={[0.22, 0.006, 0.028]} position={[-0.2, 0, -0.28]}>
-                    <meshStandardMaterial color="#B9875E" roughness={0.92} metalness={0.02} />
-                  </Box>
-                  <Box args={[0.3, 0.006, 0.028]} position={[0.12, 0, -0.28]}>
-                    <meshStandardMaterial color="#B9875E" roughness={0.92} metalness={0.02} />
-                  </Box>
-                </group>
-              </group>
-
-              {step === 'story-gift' && (
-                <mesh
-                  position={[0, 0.4, 0.04]}
-                  onClick={handleStoryGiftTap}
-                  onPointerDown={handleStoryGiftPointerDown}
-                  onPointerUp={handleStoryGiftPointerUp}
-                  onPointerCancel={handleStoryGiftPointerUp}
-                  onPointerMissed={() => {
-                    finishStoryGiftPull();
-                  }}
-                >
-                  <boxGeometry args={[2, 1.1, 1.92]} />
-                  <meshBasicMaterial transparent opacity={0} />
-                </mesh>
-              )}
-
-              {step === 'closing-gift' && (
-                <mesh
-                  position={[0, 0.2, 0]}
-                  onPointerDown={handleClosingGiftPointerDown}
-                  onPointerUp={handleClosingGiftPointerUp}
-                  onPointerCancel={handleClosingGiftPointerUp}
-                  onPointerMissed={() => {
-                    finishClosingGiftDrag(false);
-                  }}
-                >
-                  <boxGeometry args={[2.45, 2.35, 2.4]} />
-                  <meshBasicMaterial transparent opacity={0} />
-                </mesh>
-              )}
-              
-              {/* Gold Wireframe/Edge Accents for the Base */}
-              <group>
-                {/* Vertical Edges */}
-                {verticalEdgePositions.map((pos, i) => (
-                <Box key={`v-${i}`} args={[0.02, 1.69, 0.02]} position={[pos[0], 0.14, pos[2]]}>
-                    <meshPhysicalMaterial color="#D4AF37" metalness={1} roughness={0.05} emissive="#D4AF37" emissiveIntensity={0.3} />
-                  </Box>
-                ))}
-                {/* Horizontal Edges - Bottom */}
-                <Box args={[2.12, 0.02, 0.02]} position={[0, -0.84, 1.05]}>
-                  <meshPhysicalMaterial color="#D4AF37" metalness={1} roughness={0.05} />
-                </Box>
-                <Box args={[2.12, 0.02, 0.02]} position={[0, -0.84, -1.05]}>
-                  <meshPhysicalMaterial color="#D4AF37" metalness={1} roughness={0.05} />
-                </Box>
-                <Box args={[0.02, 0.02, 2.12]} position={[1.05, -0.84, 0]}>
-                  <meshPhysicalMaterial color="#D4AF37" metalness={1} roughness={0.05} />
-                </Box>
-                <Box args={[0.02, 0.02, 2.12]} position={[-1.05, -0.84, 0]}>
-                  <meshPhysicalMaterial color="#D4AF37" metalness={1} roughness={0.05} />
-                </Box>
-              </group>
-
-              <group position={[0, -0.44, 0]}>
-                <RoundedBox args={[1.42, 0.28, 1.18]} radius={0.04} smoothness={4}>
-                  <meshStandardMaterial color="#3C241A" roughness={0.94} metalness={0.02} />
-                </RoundedBox>
-                <RoundedBox args={[1.28, 0.18, 1.02]} radius={0.04} smoothness={4} position={[0, 0.12, 0]}>
-                  <meshStandardMaterial color="#6E4A36" roughness={0.92} metalness={0.02} />
-                </RoundedBox>
-                <RoundedBox args={[0.92, 0.1, 0.62]} radius={0.03} smoothness={4} position={[0, 0.23, -0.15]}>
-                  <meshStandardMaterial color="#8A6147" roughness={0.9} metalness={0.02} />
-                </RoundedBox>
-                <RoundedBox args={[0.66, 0.08, 0.44]} radius={0.03} smoothness={4} position={[-0.14, 0.31, 0.22]}>
-                  <meshStandardMaterial color="#4E3327" roughness={0.94} metalness={0.02} />
-                </RoundedBox>
-              </group>
-
-              {step === 'story-gift' && (
-                <pointLight
-                  ref={storyGiftGlowRef}
-                  position={[0, 0.42, 0.12]}
-                  intensity={1.6}
-                  color="#F6E6C8"
-                  distance={2.8}
-                  decay={2}
-                />
-              )}
-            </group>
-            
-            {/* Inner Glow - Ethereal light from within */}
-            {step === 'ready' && (
-              <group position={[0, -0.25, 0]}>
-                <Sphere args={[0.9, 24, 24]}>
-                  <meshBasicMaterial 
-                    color="#C5A059" 
-                    transparent 
-                    opacity={0.08} 
-                  />
-                </Sphere>
-                <pointLight intensity={5.8} color="#C5A059" distance={6} decay={2} />
-                <Sparkles count={4} scale={1.5} size={1.5} speed={0.34} color="#C5A059" opacity={0.2} />
-              </group>
-            )}
-            
-            {/* Box Lid Group (for pivoting) */}
-            <group ref={lidGroupRef} position={[0, 0.45, -1.05]}>
-              <RoundedBox args={[2.2, 0.3, 2.2]} radius={0.08} smoothness={4} position={[0, 0.15, 1.05]}>
-                <meshPhysicalMaterial 
-                  color="#FDFBF7" 
-                  metalness={0.1}
-                  roughness={0.08}
-                  clearcoat={0.8}
-                  clearcoatRoughness={0.1}
-                  envMapIntensity={3}
-                  transmission={0.1}
-                  thickness={0.5}
-                  ior={1.4}
-                  sheen={1}
-                  sheenColor="#FFF"
-                  sheenRoughness={0.1}
-                />
-              </RoundedBox>
-              
-              {/* Elegant Gold Ribbon & Corner Accents */}
-              <group position={[0, 0.15, 1.05]}>
-                {/* Vertical Ribbon */}
-                <Box args={[0.04, 0.34, 2.22]}>
-                  <meshPhysicalMaterial 
-                    color="#D4AF37" 
-                    metalness={1} 
-                    roughness={0.05} 
-                    emissive="#D4AF37"
-                    emissiveIntensity={0.5}
-                  />
-                </Box>
-                {/* Horizontal Ribbon */}
-                <Box args={[2.22, 0.34, 0.04]}>
-                  <meshPhysicalMaterial 
-                    color="#D4AF37" 
-                    metalness={1} 
-                    roughness={0.05} 
-                    emissive="#D4AF37"
-                    emissiveIntensity={0.5}
-                  />
-                </Box>
-                
-                {/* Gold Corner Accents */}
-                {cornerPositions.map((pos, i) => (
-                  <group key={`corner-${i}`} position={pos}>
-                    <Box args={[0.15, 0.35, 0.02]} position={[pos[0] > 0 ? -0.065 : 0.065, 0, 0]}>
-                      <meshPhysicalMaterial color="#D4AF37" metalness={1} roughness={0.05} />
-                    </Box>
-                    <Box args={[0.02, 0.35, 0.15]} position={[0, 0, pos[2] > 0 ? -0.065 : 0.065]}>
-                      <meshPhysicalMaterial color="#D4AF37" metalness={1} roughness={0.05} />
-                    </Box>
-                  </group>
-                ))}
-
-                {/* Gold Trim around the lid edge - Top & Bottom */}
-                <Box args={[2.26, 0.05, 2.26]} position={[0, 0.17, 0]}>
-                  <meshPhysicalMaterial color="#D4AF37" metalness={1} roughness={0.05} />
-                </Box>
-                <Box args={[2.26, 0.05, 2.26]} position={[0, -0.17, 0]}>
-                  <meshPhysicalMaterial color="#D4AF37" metalness={1} roughness={0.05} />
-                </Box>
-                
-                {/* Central Gold Seal/Medallion - More intricate */}
-                <group position={[0, 0.19, 0]} rotation={[0, Math.PI / 4, 0]}>
-                  <Box args={[0.4, 0.06, 0.4]}>
-                    <meshPhysicalMaterial color="#D4AF37" metalness={1} roughness={0.05} emissive="#D4AF37" emissiveIntensity={0.5} />
-                  </Box>
-                  <Box args={[0.25, 0.1, 0.25]} rotation={[0, -Math.PI / 4, 0]}>
-                    <meshPhysicalMaterial color="#F8F4EE" metalness={0.4} roughness={0.05} clearcoat={0.5} />
-                  </Box>
-                </group>
-
-                <group position={[0, 0.36, 0]}>
-                  <Torus args={[0.2, 0.035, 12, 24]} rotation={[Math.PI / 2.2, 0, Math.PI / 4]}>
-                    <meshPhysicalMaterial color="#D4AF37" metalness={1} roughness={0.08} />
-                  </Torus>
-                  <Torus args={[0.2, 0.035, 12, 24]} rotation={[Math.PI / 2.2, 0, -Math.PI / 4]}>
-                    <meshPhysicalMaterial color="#D4AF37" metalness={1} roughness={0.08} />
-                  </Torus>
-                </group>
-              </group>
-            </group>
-          </group>
+          <GiftBoxModel
+            step={step}
+            isMobileViewport={isMobileViewport}
+            verticalEdgePositions={verticalEdgePositions}
+            cornerPositions={cornerPositions}
+            boxGroupRef={boxGroupRef}
+            lidGroupRef={lidGroupRef}
+            insertCardRef={insertCardRef}
+            storyGiftGlowRef={storyGiftGlowRef}
+            handleStoryGiftTap={handleStoryGiftTap}
+            handleStoryGiftPointerDown={handleStoryGiftPointerDown}
+            handleStoryGiftPointerUp={handleStoryGiftPointerUp}
+            finishStoryGiftPull={finishStoryGiftPull}
+            handleClosingGiftPointerDown={handleClosingGiftPointerDown}
+            handleClosingGiftPointerUp={handleClosingGiftPointerUp}
+            finishClosingGiftDrag={finishClosingGiftDrag}
+          />
         </group>
 
-        {/* Cosmic Core & Timeline - Redesigned to be a subtle point of light */}
         {isTimelineActive && (
-          <group ref={timelineGroupRef} position={[0, 0, 0]}>
-            {/* Central Core - Ethereal Point of Light */}
-            <group ref={coreRef} position={[0, 1.5, 0]}>
-              <Sphere args={[0.05, 12, 12]}>
-                <meshBasicMaterial color="#FFF" />
-              </Sphere>
-              {/* Soft Glow Layers */}
-              <Sphere args={[0.34, 12, 12]}>
-                <meshStandardMaterial 
-                  color="#D8C4A8" 
-                  transparent 
-                  opacity={isTimelinePhase ? 0.15 : 0.11}
-                  emissive="#D8C4A8"
-                  emissiveIntensity={isTimelinePhase ? 2 : 1.4}
-                />
-              </Sphere>
-              <pointLight intensity={isTimelinePhase ? 2.1 : 2.2} color="#F8F4EE" distance={isTimelinePhase ? 8 : 6} decay={2} />
-              <Sparkles count={isTimelinePhase ? 2 : 1} scale={1.2} size={0.58} speed={0.08} color="#F8F4EE" opacity={0.1} />
-            </group>
-
-            {/* Timeline Tracks & Nodes - Ultra-thin lines */}
-            {isTimelinePhase && (
-              <group ref={tracksRef} position={[0, 1.5, 0]}>
-              {/* Node 1: Before (Top Left) */}
-              <group position={[-2.5, 1.5, -1]}>
-                <Sphere args={[0.08, 12, 12]}>
-                  <meshStandardMaterial 
-                    color="#C5A059" 
-                    emissive="#C5A059"
-                    emissiveIntensity={1.2}
-                  />
-                </Sphere>
-                {/* Node Glow */}
-                <pointLight intensity={0.8} color="#C5A059" distance={1.8} />
-                {/* Track to core */}
-                <mesh rotation={[0, 0, Math.PI / 4]}>
-                  <cylinderGeometry args={[0.0015, 0.0015, 3.5]} />
-                  <meshBasicMaterial color="#C5A059" transparent opacity={0.15} />
-                </mesh>
-              </group>
-
-              {/* Node 2: Us (Right) */}
-              <group position={[2.8, -0.5, 0.5]}>
-                <Sphere args={[0.08, 12, 12]}>
-                  <meshStandardMaterial 
-                    color="#7D6B9D" 
-                    emissive="#7D6B9D"
-                    emissiveIntensity={1.5}
-                  />
-                </Sphere>
-                {/* Node Glow */}
-                <pointLight intensity={0.9} color="#7D6B9D" distance={2} />
-                {/* Track to core */}
-                <mesh rotation={[0, 0, -Math.PI / 2.5]}>
-                  <cylinderGeometry args={[0.0015, 0.0015, 3]} />
-                  <meshBasicMaterial color="#7D6B9D" transparent opacity={0.15} />
-                </mesh>
-              </group>
-
-              {/* Node 3: Now (Front Center) */}
-              <group position={[0, 2.5, 2]}>
-                <Sphere args={[0.1, 12, 12]}>
-                  <meshStandardMaterial 
-                    color="#F8F4EE" 
-                    emissive="#F8F4EE"
-                    emissiveIntensity={1.8}
-                  />
-                </Sphere>
-                {/* Node Glow */}
-                <pointLight intensity={1.1} color="#F8F4EE" distance={2.4} />
-                {/* Track to core */}
-                <mesh rotation={[Math.PI / 3, 0, 0]}>
-                  <cylinderGeometry args={[0.0015, 0.0015, 2.5]} />
-                  <meshBasicMaterial color="#F8F4EE" transparent opacity={0.2} />
-                </mesh>
-              </group>
-              </group>
-            )}
-            
-            {/* Magic dust - Very subtle */}
-            {isTimelinePhase && (
-              <Sparkles count={2} scale={2.1} size={0.58} speed={0.06} color="#F8F4EE" opacity={0.08} />
-            )}
-          </group>
+          <Suspense fallback={null}>
+            <GiftBoxTimelineLayer
+              isMobileViewport={isMobileViewport}
+              isTimelinePhase={isTimelinePhase}
+              timelineGroupRef={timelineGroupRef}
+              coreRef={coreRef}
+              tracksRef={tracksRef}
+            />
+          </Suspense>
         )}
       </Float>
     </>
