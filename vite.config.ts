@@ -59,6 +59,8 @@ export default defineConfig(({ command, mode }) => {
   const { basePath, siteUrl, ogImageUrl } = getGithubPagesConfig(env);
   const resolvedBasePath = command === 'serve' ? '/' : basePath;
   const preview = birthdayCardContentConfig.preview;
+  const isPackagePath = (id: string, pkg: string) =>
+    id.includes(`/node_modules/${pkg}/`) || id.includes(`\\node_modules\\${pkg}\\`);
 
   return {
     base: resolvedBasePath,
@@ -88,6 +90,54 @@ export default defineConfig(({ command, mode }) => {
     },
     server: {
       hmr: process.env.DISABLE_HMR !== 'true',
+    },
+    build: {
+      chunkSizeWarningLimit: 800,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes('node_modules')) {
+              return undefined;
+            }
+
+            if (
+              id.includes('/node_modules/three/examples/jsm/') ||
+              id.includes('\\node_modules\\three\\examples\\jsm\\')
+            ) {
+              return 'vendor-three-extras';
+            }
+
+            if (isPackagePath(id, 'three')) {
+              return 'vendor-three';
+            }
+
+            if (isPackagePath(id, '@react-three/fiber')) {
+              return 'vendor-r3f';
+            }
+
+            if (isPackagePath(id, '@react-three/drei')) {
+              return 'vendor-drei';
+            }
+
+            if (isPackagePath(id, 'gsap')) {
+              return 'vendor-gsap';
+            }
+
+            if (isPackagePath(id, 'lucide-react')) {
+              return 'vendor-icons';
+            }
+
+            if (
+              isPackagePath(id, 'react') ||
+              isPackagePath(id, 'react-dom')
+            ) {
+              return 'vendor-react';
+            }
+
+            return undefined;
+          },
+        },
+      },
     },
   };
 });
