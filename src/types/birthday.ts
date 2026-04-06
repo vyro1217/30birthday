@@ -24,6 +24,10 @@ export type BirthdayStep =
   | 'closing-gift';
 
 export type StoryGiftPhase = 'idle' | 'opening' | 'wallet-focus';
+export type BirthdayAudioSegmentId = 'opening' | 'reveal' | 'reading' | 'closing';
+export type BirthdayAudioCueId = 'open-gift' | 'reveal-hit' | 'reveal-confirm' | 'finale' | 'reopen';
+export type BirthdayAudioToneColor = 'velvet' | 'glass' | 'warm';
+export type BirthdayAudioPulse = 'none' | 'soft' | 'steady';
 
 export interface BirthdayGiftPromptContent {
   hint: string;
@@ -62,10 +66,27 @@ export interface BirthdayClosingSection {
   imageAlt?: string;
 }
 
+export interface BirthdayAudioSegmentConfig {
+  title?: string;
+  intensity?: number;
+  tempoMs?: number;
+  toneColor?: BirthdayAudioToneColor;
+  pulse?: BirthdayAudioPulse;
+  sparkle?: number;
+}
+
+export interface BirthdayAudioCueConfig {
+  fileSrc?: string;
+  kind?: 'swell' | 'chime' | 'bell';
+  volume?: number;
+}
+
 export interface BirthdayBackgroundAudio {
   mode: 'off' | 'generated' | 'file';
   title?: string;
   fileSrc?: string;
+  segments?: Partial<Record<BirthdayAudioSegmentId, BirthdayAudioSegmentConfig>>;
+  accents?: Partial<Record<BirthdayAudioCueId, BirthdayAudioCueConfig>>;
 }
 
 export interface BirthdayUiCopy {

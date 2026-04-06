@@ -15,7 +15,7 @@ import { MainBlessing } from './components/MainBlessing';
 import { MemoryNote } from './components/MemoryNote';
 import { FinalWish } from './components/FinalWish';
 import { StageFrame } from './components/StageFrame';
-import { BirthdayStep, StoryGiftPhase } from './types/birthday';
+import { BirthdayAudioSegmentId, BirthdayStep, StoryGiftPhase } from './types/birthday';
 
 import { ChevronLeft, ChevronRight, Volume2, VolumeX } from 'lucide-react';
 
@@ -91,6 +91,28 @@ function getSceneMode(step: BirthdayStep): SceneMode {
 
 function getScenePlaybackMode(step: BirthdayStep): ScenePlaybackMode {
   return READING_SCENE_STEPS.has(step) ? 'demand' : 'always';
+}
+
+function getMusicSegment(step: BirthdayStep, storyGiftPhase: StoryGiftPhase): BirthdayAudioSegmentId {
+  if (step === 'ready' || step === 'opening' || step === 'opening-bridge') {
+    return 'opening';
+  }
+
+  if (step === 'story-gift') {
+    return storyGiftPhase === 'wallet-focus' ? 'reveal' : 'opening';
+  }
+
+  if (
+    step === 'title' ||
+    step === 'message' ||
+    step === 'message2' ||
+    step === 'final' ||
+    step === 'closing-gift'
+  ) {
+    return 'closing';
+  }
+
+  return 'reading';
 }
 
 type NavigatorConnection = {
@@ -426,6 +448,7 @@ export default function App() {
 
   const handleOpenGift = React.useCallback(() => {
     backgroundAudio.start();
+    backgroundAudio.triggerAccent('open-gift');
     openGift();
   }, [backgroundAudio, openGift]);
 
@@ -436,7 +459,8 @@ export default function App() {
 
     setStoryGiftPhase('opening');
     setStoryGiftPullDistance(148);
-  }, [step, storyGiftPhase]);
+    backgroundAudio.triggerAccent('reveal-hit');
+  }, [backgroundAudio, step, storyGiftPhase]);
 
   const handleStoryGiftConfirm = React.useCallback(() => {
     if (step !== 'story-gift' || storyGiftPhase === 'idle') {
@@ -447,8 +471,9 @@ export default function App() {
       return;
     }
 
+    backgroundAudio.triggerAccent('reveal-confirm');
     continueStep();
-  }, [continueStep, step, storyGiftPhase]);
+  }, [backgroundAudio, continueStep, step, storyGiftPhase]);
 
   const handleStoryGiftPullChange = React.useCallback(
     (distance: number) => {
@@ -485,8 +510,9 @@ export default function App() {
 
     setStoryGiftPhase('idle');
     setStoryGiftPullDistance(0);
+    backgroundAudio.triggerAccent('reopen');
     goToStep('opening-bridge');
-  }, [goToStep, step]);
+  }, [backgroundAudio, goToStep, step]);
 
   useEffect(() => {
     if (step !== 'story-gift' && storyGiftPhase !== 'idle') {
@@ -514,6 +540,28 @@ export default function App() {
       window.clearTimeout(focusTimer);
     };
   }, [prefersReducedMotion, step, storyGiftPhase]);
+
+  useEffect(() => {
+    backgroundAudio.setSegment(getMusicSegment(step, storyGiftPhase));
+  }, [backgroundAudio, step, storyGiftPhase]);
+
+  const previousStepRef = React.useRef<BirthdayStep>(step);
+
+  useEffect(() => {
+    const previousStep = previousStepRef.current;
+
+    if (step !== previousStep) {
+      if (step === 'final') {
+        backgroundAudio.triggerAccent('finale');
+      }
+
+      if (step === 'closing-gift' && previousStep !== 'final') {
+        backgroundAudio.triggerAccent('finale');
+      }
+    }
+
+    previousStepRef.current = step;
+  }, [backgroundAudio, step]);
 
   return (
     <main

@@ -38,7 +38,63 @@ export const birthdayCardContentConfig: BirthdayContentConfig = {
   },
   backgroundAudio: {
     mode: 'generated',
-    title: 'Soft background music',
+    title: 'Cinematic birthday suite',
+    segments: {
+      opening: {
+        title: 'Opening hush',
+        intensity: 0.64,
+        tempoMs: 4100,
+        toneColor: 'velvet',
+        pulse: 'none',
+        sparkle: 0.08,
+      },
+      reveal: {
+        title: 'Gift reveal',
+        intensity: 0.94,
+        tempoMs: 3000,
+        toneColor: 'glass',
+        pulse: 'soft',
+        sparkle: 0.34,
+      },
+      reading: {
+        title: 'Reading glow',
+        intensity: 0.78,
+        tempoMs: 4700,
+        toneColor: 'warm',
+        pulse: 'none',
+        sparkle: 0.18,
+      },
+      closing: {
+        title: 'Closing embrace',
+        intensity: 0.74,
+        tempoMs: 5200,
+        toneColor: 'warm',
+        pulse: 'soft',
+        sparkle: 0.18,
+      },
+    },
+    accents: {
+      'open-gift': {
+        kind: 'swell',
+        volume: 0.34,
+      },
+      'reveal-hit': {
+        kind: 'chime',
+        volume: 0.42,
+      },
+      'reveal-confirm': {
+        kind: 'bell',
+        volume: 0.36,
+      },
+      finale: {
+        kind: 'swell',
+        volume: 0.3,
+      },
+      reopen: {
+        kind: 'chime',
+        volume: 0.24,
+      },
+    },
   },
   opening: {
     introText:
