@@ -19,11 +19,12 @@ import { BirthdayStep } from './types/birthday';
 
 import { ChevronLeft, ChevronRight, Volume2, VolumeX } from 'lucide-react';
 
-const FullSceneCanvas = React.lazy(() =>
+const loadFullSceneCanvas = () =>
   import('./components/FullSceneCanvas').then((module) => ({
     default: module.FullSceneCanvas,
-  })),
-);
+  }));
+
+const FullSceneCanvas = React.lazy(loadFullSceneCanvas);
 
 type ExperienceMode = 'full' | 'lite' | 'readable';
 type SceneMode =
@@ -263,6 +264,7 @@ export default function App() {
   const backgroundAudio = useBackgroundAudio(birthdayContent.backgroundAudio);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [experienceMode, setExperienceMode] = useState<ExperienceMode>(getInitialExperienceMode);
+  const [hasPrimedFullScene, setHasPrimedFullScene] = useState(false);
   const [isStoryGiftOpening, setIsStoryGiftOpening] = useState(false);
   const [storyGiftPullDistance, setStoryGiftPullDistance] = useState(0);
   const [lockedReadingStageHeight, setLockedReadingStageHeight] = useState<number | null>(null);
@@ -304,7 +306,8 @@ export default function App() {
   const isLiteExperience = experienceMode === 'lite';
   const sceneMode = getSceneMode(step);
   const scenePlaybackMode = getScenePlaybackMode(step);
-  const shouldRenderFullScene = !isReadableExperience && sceneMode !== 'none';
+  const shouldMountFullScene = !isReadableExperience && (hasPrimedFullScene || sceneMode !== 'none');
+  const shouldShowFullScene = shouldMountFullScene && sceneMode !== 'none';
   const shouldUseStaticBackdrop =
     isReadableExperience || isLiteExperience || sceneMode === 'none' || sceneMode === 'reading-background-box';
   const showNavigation = !TRANSITION_ONLY_STEPS.has(step) && step !== 'ready' && step !== 'story-gift';
@@ -356,6 +359,10 @@ export default function App() {
     READING_SCENE_STEPS.has(step) && lockedReadingStageHeight !== null
       ? lockedReadingStageHeight
       : rawStageHeight;
+  const usableStageHeight = Math.max(
+    stageHeight - topReserve - bottomReserve,
+    isVeryCompactViewport ? 260 : 320,
+  );
   const appShellStyle = {
     '--app-height': `${Math.max(viewport.height, 0)}px`,
     '--app-width': `${Math.max(viewport.width, 0)}px`,
@@ -364,9 +371,58 @@ export default function App() {
     transform: 'translate3d(var(--app-left-offset), var(--app-top-offset), 0)',
   } as React.CSSProperties;
 
-  const handleSceneFailure = () => {
-    setDegradedExperienceMode('readable');
-  };
+  const handleSceneFailure = React.useCallback(() => {
+    setDegradedExperienceMode(experienceMode === 'full' ? 'lite' : 'readable');
+  }, [experienceMode, setDegradedExperienceMode]);
+
+  useEffect(() => {
+    if (isReadableExperience || hasPrimedFullScene) {
+      return;
+    }
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof globalThis.setTimeout> | null = null;
+    let idleId: number | null = null;
+
+    const primeScene = () => {
+      if (cancelled) {
+        return;
+      }
+
+      loadFullSceneCanvas();
+      setHasPrimedFullScene(true);
+    };
+
+    if ('requestIdleCallback' in window) {
+      idleId = (
+        window as Window & {
+          requestIdleCallback: (callback: () => void, options?: { timeout: number }) => number;
+        }
+      ).requestIdleCallback(primeScene, { timeout: 900 });
+    } else {
+      timeoutId = globalThis.setTimeout(primeScene, 260);
+    }
+
+    return () => {
+      cancelled = true;
+      if (
+        idleId !== null &&
+        'cancelIdleCallback' in window
+      ) {
+        (
+          window as Window & {
+            cancelIdleCallback: (id: number) => void;
+          }
+        ).cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== null) {
+        globalThis.clearTimeout(timeoutId);
+      }
+    };
+  }, [hasPrimedFullScene, isReadableExperience]);
 
   const handleOpenGift = React.useCallback(() => {
     backgroundAudio.start();
@@ -491,10 +547,11 @@ export default function App() {
       </div>
 
       {/* 3D Scene Layer */}
-      {shouldRenderFullScene && (
+      {shouldMountFullScene && (
         <div
-          className={`${isSceneInteractive ? 'pointer-events-auto' : 'pointer-events-none'} absolute inset-0 z-[1]`}
+          className={`${shouldShowFullScene && isSceneInteractive ? 'pointer-events-auto' : 'pointer-events-none'} absolute inset-0 z-[1] transition-opacity duration-500 ${shouldShowFullScene ? 'opacity-100' : 'opacity-0'}`}
           style={{ touchAction: isSceneInteractive ? 'none' : 'auto' }}
+          aria-hidden={!shouldShowFullScene}
         >
           <SceneErrorBoundary onError={handleSceneFailure}>
             <Suspense fallback={null}>
@@ -527,15 +584,21 @@ export default function App() {
       >
         <AnimatePresence mode="wait">
           <>
-            <div className="h-full w-full">
+            <div
+              className="h-full w-full"
+              style={{
+                paddingTop: `${topReserve}px`,
+                paddingBottom: `${bottomReserve}px`,
+              }}
+            >
           {step === 'opening-bridge' && (
-            <StageFrame key="opening-bridge" availableHeight={stageHeight} anchor="bottom">
+            <StageFrame key="opening-bridge" availableHeight={usableStageHeight} anchor="bottom">
               <OpeningBridgeStage compact={compactCards} veryCompact={isVeryCompactViewport} />
             </StageFrame>
           )}
 
           {(step === 'ready' || step === 'opening') && (
-            <StageFrame key="ready-stage" availableHeight={stageHeight} contentClassName="flex h-full items-center justify-center">
+            <StageFrame key="ready-stage" availableHeight={usableStageHeight} contentClassName="flex h-full items-center justify-center">
               <div className="pointer-events-auto">
                 <OpeningStage
                   content={birthdayContent.opening}
@@ -550,7 +613,7 @@ export default function App() {
           )}
 
           {step === 'gift-ribbon' && (
-            <StageFrame key="gift-ribbon" availableHeight={stageHeight} contentClassName="flex h-full items-center justify-center">
+            <StageFrame key="gift-ribbon" availableHeight={usableStageHeight} contentClassName="flex h-full items-center justify-center">
               <div className="pointer-events-auto">
                 <GiftRibbonStage
                   content={birthdayContent.opening.revealCard}
@@ -564,7 +627,7 @@ export default function App() {
           )}
 
           {step === 'story-gift' && (
-            <StageFrame key="story-gift" availableHeight={stageHeight} anchor="bottom">
+            <StageFrame key="story-gift" availableHeight={usableStageHeight} anchor="bottom">
               <StoryGiftStage
                 compact={compactCards}
                 veryCompact={isVeryCompactViewport}
@@ -576,7 +639,7 @@ export default function App() {
           )}
 
           {step === 'node-before' && (
-            <StageFrame key="node-before" availableHeight={stageHeight}>
+            <StageFrame key="node-before" availableHeight={usableStageHeight}>
               <TimelineNodeShell
                 compact={compactCards}
                 veryCompact={isVeryCompactViewport}
@@ -588,7 +651,7 @@ export default function App() {
           )}
 
           {step === 'node-us' && (
-            <StageFrame key="node-us" availableHeight={stageHeight}>
+            <StageFrame key="node-us" availableHeight={usableStageHeight}>
               <TimelineNodeShell
                 compact={compactCards}
                 veryCompact={isVeryCompactViewport}
@@ -617,7 +680,7 @@ export default function App() {
             }
 
             return (
-              <StageFrame key={memoryMoment.id} availableHeight={stageHeight}>
+              <StageFrame key={memoryMoment.id} availableHeight={usableStageHeight}>
                 <TimelineNodeShell
                   compact={compactCards}
                   veryCompact={isVeryCompactViewport}
@@ -646,7 +709,7 @@ export default function App() {
           })}
 
           {step === 'node-now' && (
-            <StageFrame key="node-now" availableHeight={stageHeight}>
+            <StageFrame key="node-now" availableHeight={usableStageHeight}>
               <TimelineNodeShell
                 compact={compactCards}
                 veryCompact={isVeryCompactViewport}
@@ -669,19 +732,19 @@ export default function App() {
           )}
 
           {step === 'node-thirty-soft' && (
-            <StageFrame key="node-thirty-soft" availableHeight={stageHeight}>
+            <StageFrame key="node-thirty-soft" availableHeight={usableStageHeight}>
               <IntroOverlay key="node-thirty-soft" text={birthdayContent.story.thirtySoft.text} variant="box-bottom" compact={compactCards} veryCompact={isVeryCompactViewport} />
             </StageFrame>
           )}
 
           {step === 'node-thirty-race' && (
-            <StageFrame key="node-thirty-race" availableHeight={stageHeight}>
+            <StageFrame key="node-thirty-race" availableHeight={usableStageHeight}>
               <IntroOverlay key="node-thirty-race" text={birthdayContent.story.thirtyRace.text} variant="box-bottom" compact={compactCards} veryCompact={isVeryCompactViewport} />
             </StageFrame>
           )}
 
           {step === 'title' && (
-            <StageFrame key="title" availableHeight={stageHeight}>
+            <StageFrame key="title" availableHeight={usableStageHeight}>
               <ClosingStageShell
                 compact={compactCards}
                 veryCompact={isVeryCompactViewport}
@@ -702,7 +765,7 @@ export default function App() {
           )}
 
           {step === 'message' && (
-            <StageFrame key="message" availableHeight={stageHeight}>
+            <StageFrame key="message" availableHeight={usableStageHeight}>
               <ClosingStageShell
                 compact={compactCards}
                 veryCompact={isVeryCompactViewport}
@@ -717,7 +780,7 @@ export default function App() {
           )}
           
           {step === 'message2' && (
-            <StageFrame key="message2" availableHeight={stageHeight}>
+            <StageFrame key="message2" availableHeight={usableStageHeight}>
               <ClosingStageShell
                 compact={compactCards}
                 veryCompact={isVeryCompactViewport}
@@ -732,7 +795,7 @@ export default function App() {
           )}
 
           {step === 'final' && (
-            <StageFrame key="final" availableHeight={stageHeight}>
+            <StageFrame key="final" availableHeight={usableStageHeight}>
               <ClosingStageShell
                 compact={compactCards}
                 veryCompact={isVeryCompactViewport}
@@ -755,7 +818,7 @@ export default function App() {
           )}
 
           {step === 'closing-gift' && (
-            <StageFrame key="closing-gift" availableHeight={stageHeight} contentClassName="flex h-full items-center justify-center">
+            <StageFrame key="closing-gift" availableHeight={usableStageHeight} contentClassName="flex h-full items-center justify-center">
               <div className="pointer-events-auto">
                 <ClosingGiftStage
                   compact={compactCards}

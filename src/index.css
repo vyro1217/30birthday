@@ -63,6 +63,7 @@ html {
   color-scheme: dark;
   overflow-x: hidden;
   overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 body {
@@ -77,15 +78,25 @@ body {
   position: relative;
   isolation: isolate;
   overflow: hidden;
+  transform: translateZ(0);
 }
 
 canvas {
+  display: block;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 * {
   box-sizing: border-box;
+}
+
+img,
+video,
+canvas {
+  max-width: 100%;
 }
 
 .touch-scroll {

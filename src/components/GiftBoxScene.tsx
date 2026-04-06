@@ -377,114 +377,129 @@ export const GiftBoxScene = memo(function GiftBoxScene({
   }, [step]);
 
   useEffect(() => {
-    const isBridgeStep = step === 'opening-bridge';
-    const isStoryGiftStep = step === 'story-gift';
-    const isClosingGiftStep = step === 'closing-gift';
+    const ctx = gsap.context(() => {
+      const isBridgeStep = step === 'opening-bridge';
+      const isStoryGiftStep = step === 'story-gift';
+      const isClosingGiftStep = step === 'closing-gift';
 
-    if (isStoryGiftStep) {
-      gsap.to(camera.position, {
-        x: 0,
-        y: 8.45,
-        z: 0.38,
-        duration: 2.05,
-        ease: 'power2.inOut',
-      });
-      gsap.to(camera.rotation, {
-        x: -1.54,
-        y: 0,
-        z: 0,
-        duration: 2.05,
-        ease: 'power2.inOut',
-      });
-    } else if (isClosingGiftStep) {
-      gsap.to(camera.position, {
-        x: 0,
-        y: isMobileViewport ? 1.2 : 1.1,
-        z: isMobileViewport ? 10.4 : 9.5,
-        duration: 2.4,
-        ease: 'power2.inOut',
-      });
-      gsap.to(camera.rotation, {
-        x: isMobileViewport ? -0.08 : -0.06,
-        y: 0,
-        z: 0,
-        duration: 2.4,
-        ease: 'power2.inOut',
-      });
-    } else if (isBridgeStep) {
-      gsap.to(camera.position, {
-        x: 0,
-        y: 7.4,
-        z: 1.2,
-        duration: 1.35,
-        ease: 'power2.inOut',
-      });
-      gsap.to(camera.rotation, {
-        x: -1.34,
-        y: 0,
-        z: 0,
-        duration: 1.35,
-        ease: 'power2.inOut',
-      });
-    } else if (isReadingBackgroundPhase || textSteps.includes(step)) {
-      gsap.to(camera.position, {
-        x: 0,
-        y: isMobileViewport ? 5.3 : 5.55,
-        z: isMobileViewport ? 3.9 : 3.55,
-        duration: 1.8,
-        ease: 'power2.inOut',
-      });
-      gsap.to(camera.rotation, {
-        x: isMobileViewport ? -0.86 : -0.9,
-        y: 0,
-        z: 0,
-        duration: 1.8,
-        ease: 'power2.inOut',
-      });
-    } else {
-      gsap.to(camera.position, {
-        x: 0,
-        y: 0,
-        z: 7,
-        duration: 1.6,
-        ease: 'power2.inOut',
-      });
-      gsap.to(camera.rotation, {
-        x: 0,
-        y: 0,
-        z: 0,
-        duration: 1.6,
-        ease: 'power2.inOut',
-      });
-    }
+      if (isStoryGiftStep) {
+        gsap.to(camera.position, {
+          x: 0,
+          y: 8.45,
+          z: 0.38,
+          duration: 2.05,
+          ease: 'power2.inOut',
+          overwrite: 'auto',
+        });
+        gsap.to(camera.rotation, {
+          x: -1.54,
+          y: 0,
+          z: 0,
+          duration: 2.05,
+          ease: 'power2.inOut',
+          overwrite: 'auto',
+        });
+      } else if (isClosingGiftStep) {
+        gsap.to(camera.position, {
+          x: 0,
+          y: isMobileViewport ? 1.2 : 1.1,
+          z: isMobileViewport ? 10.4 : 9.5,
+          duration: 2.4,
+          ease: 'power2.inOut',
+          overwrite: 'auto',
+        });
+        gsap.to(camera.rotation, {
+          x: isMobileViewport ? -0.08 : -0.06,
+          y: 0,
+          z: 0,
+          duration: 2.4,
+          ease: 'power2.inOut',
+          overwrite: 'auto',
+        });
+      } else if (isBridgeStep) {
+        gsap.to(camera.position, {
+          x: 0,
+          y: 7.4,
+          z: 1.2,
+          duration: 1.35,
+          ease: 'power2.inOut',
+          overwrite: 'auto',
+        });
+        gsap.to(camera.rotation, {
+          x: -1.34,
+          y: 0,
+          z: 0,
+          duration: 1.35,
+          ease: 'power2.inOut',
+          overwrite: 'auto',
+        });
+      } else if (isReadingBackgroundPhase || textSteps.includes(step)) {
+        gsap.to(camera.position, {
+          x: 0,
+          y: isMobileViewport ? 5.3 : 5.55,
+          z: isMobileViewport ? 3.9 : 3.55,
+          duration: 1.8,
+          ease: 'power2.inOut',
+          overwrite: 'auto',
+        });
+        gsap.to(camera.rotation, {
+          x: isMobileViewport ? -0.86 : -0.9,
+          y: 0,
+          z: 0,
+          duration: 1.8,
+          ease: 'power2.inOut',
+          overwrite: 'auto',
+        });
+      } else {
+        gsap.to(camera.position, {
+          x: 0,
+          y: 0,
+          z: 7,
+          duration: 1.6,
+          ease: 'power2.inOut',
+          overwrite: 'auto',
+        });
+        gsap.to(camera.rotation, {
+          x: 0,
+          y: 0,
+          z: 0,
+          duration: 1.6,
+          ease: 'power2.inOut',
+          overwrite: 'auto',
+        });
+      }
 
-    if (step === 'opening' && lidGroupRef.current) {
+      if (step === 'opening' && lidGroupRef.current) {
       // Pivot animation: rotate around the back edge
-      gsap.to(lidGroupRef.current.rotation, {
+        gsap.to(lidGroupRef.current.rotation, {
         x: -Math.PI * 0.65,
         duration: 2.2,
         ease: 'back.out(1.4)',
-      });
+        overwrite: 'auto',
+        });
       // Slight lift and slide
-      gsap.to(lidGroupRef.current.position, {
+        gsap.to(lidGroupRef.current.position, {
         y: 1.2,
         z: -0.4,
         duration: 2.2,
         ease: 'power2.out',
-      });
-    }
+        overwrite: 'auto',
+        });
+      }
 
     if (step === 'story-gift' && lidGroupRef.current) {
       gsap.to(lidGroupRef.current.rotation, {
         x: storyGiftOpening ? -Math.PI * 0.94 : -Math.PI * 0.78,
         duration: storyGiftOpening ? 1.05 : 1.5,
         ease: 'power3.out',
+        overwrite: 'auto',
       });
       gsap.to(lidGroupRef.current.position, {
         y: storyGiftOpening ? 1.62 : 1.36,
         z: storyGiftOpening ? -0.74 : -0.5,
         duration: storyGiftOpening ? 1.05 : 1.5,
         ease: 'power3.out',
+        overwrite: 'auto',
       });
     }
 
@@ -493,12 +508,14 @@ export const GiftBoxScene = memo(function GiftBoxScene({
         x: 0,
         duration: 2.1,
         ease: 'power3.inOut',
+        overwrite: 'auto',
       });
       gsap.to(lidGroupRef.current.position, {
         y: 0.45,
         z: -1.05,
         duration: 2.1,
         ease: 'power3.inOut',
+        overwrite: 'auto',
       });
     }
 
@@ -507,12 +524,14 @@ export const GiftBoxScene = memo(function GiftBoxScene({
         x: -Math.PI * 0.76,
         duration: 1.18,
         ease: 'power3.out',
+        overwrite: 'auto',
       });
       gsap.to(lidGroupRef.current.position, {
         y: 1.32,
         z: -0.5,
         duration: 1.18,
         ease: 'power3.out',
+        overwrite: 'auto',
       });
     }
 
@@ -521,12 +540,14 @@ export const GiftBoxScene = memo(function GiftBoxScene({
         x: -Math.PI * 0.88,
         duration: 1.35,
         ease: 'power3.out',
+        overwrite: 'auto',
       });
       gsap.to(lidGroupRef.current.position, {
         y: 1.42,
         z: -0.58,
         duration: 1.35,
         ease: 'power3.out',
+        overwrite: 'auto',
       });
     }
 
@@ -554,33 +575,39 @@ export const GiftBoxScene = memo(function GiftBoxScene({
           y: 1.14,
           duration: 1.05,
           ease: 'power3.out',
+          overwrite: 'auto',
         });
         gsap.to(insertCardRef.current.rotation, {
           x: -0.24,
           duration: 1.05,
           ease: 'power3.out',
+          overwrite: 'auto',
         });
       } else if (step === 'opening-bridge') {
         gsap.to(insertCardRef.current.position, {
           y: 0.28,
           duration: 1,
           ease: 'power3.out',
+          overwrite: 'auto',
         });
         gsap.to(insertCardRef.current.rotation, {
           x: -0.1,
           duration: 1,
           ease: 'power3.out',
+          overwrite: 'auto',
         });
       } else if (cornerBoxSteps.includes(step)) {
         gsap.to(insertCardRef.current.position, {
           y: 0.62,
           duration: 1,
           ease: 'power3.out',
+          overwrite: 'auto',
         });
         gsap.to(insertCardRef.current.rotation, {
           x: -0.2,
           duration: 1,
           ease: 'power3.out',
+          overwrite: 'auto',
         });
       } else if (isReadingBackgroundPhase) {
         gsap.to(insertCardRef.current.position, {
@@ -588,45 +615,53 @@ export const GiftBoxScene = memo(function GiftBoxScene({
           z: 0.08,
           duration: 1.05,
           ease: 'power3.out',
+          overwrite: 'auto',
         });
         gsap.to(insertCardRef.current.rotation, {
           x: -0.12,
           z: -0.06,
           duration: 1.05,
           ease: 'power3.out',
+          overwrite: 'auto',
         });
       } else if (['cosmic-core', 'timeline-expand', 'node-before', 'node-now', 'node-thirty-soft', 'node-thirty-race', 'title', 'message', 'message2', 'final'].includes(step)) {
         gsap.to(insertCardRef.current.position, {
           y: 0.8,
           duration: 1.05,
           ease: 'power3.out',
+          overwrite: 'auto',
         });
         gsap.to(insertCardRef.current.rotation, {
           x: -0.18,
           duration: 1.05,
           ease: 'power3.out',
+          overwrite: 'auto',
         });
       } else if (step === 'closing-gift') {
         gsap.to(insertCardRef.current.position, {
           y: -0.42,
           duration: 1.4,
           ease: 'power2.inOut',
+          overwrite: 'auto',
         });
         gsap.to(insertCardRef.current.rotation, {
           x: 0,
           duration: 1.4,
           ease: 'power2.inOut',
+          overwrite: 'auto',
         });
       } else {
         gsap.to(insertCardRef.current.position, {
           y: -0.36,
           duration: 0.85,
           ease: 'power2.inOut',
+          overwrite: 'auto',
         });
         gsap.to(insertCardRef.current.rotation, {
           x: 0,
           duration: 0.85,
           ease: 'power2.inOut',
+          overwrite: 'auto',
         });
       }
     }
@@ -642,6 +677,7 @@ export const GiftBoxScene = memo(function GiftBoxScene({
           z: storyGiftOpening ? 0.42 : 0.08,
           duration: 1.25,
           ease: 'power3.inOut',
+          overwrite: 'auto',
         });
         gsap.to(groupRef.current.scale, {
           x: isMobileViewport ? 1.04 : 1.08,
@@ -649,6 +685,7 @@ export const GiftBoxScene = memo(function GiftBoxScene({
           z: isMobileViewport ? 1.04 : 1.08,
           duration: 1.25,
           ease: 'power3.inOut',
+          overwrite: 'auto',
         });
         if (boxGroupRef.current) {
           gsap.to(boxGroupRef.current.rotation, {
@@ -657,6 +694,7 @@ export const GiftBoxScene = memo(function GiftBoxScene({
           z: 0,
           duration: 1.25,
           ease: 'power3.inOut',
+          overwrite: 'auto',
         });
       }
     } else if (step === 'opening-bridge' && groupRef.current) {
@@ -666,6 +704,7 @@ export const GiftBoxScene = memo(function GiftBoxScene({
         z: 0.12,
         duration: 1.1,
         ease: 'power3.inOut',
+        overwrite: 'auto',
       });
       gsap.to(groupRef.current.scale, {
         x: isMobileViewport ? 1.02 : 1.05,
@@ -673,6 +712,7 @@ export const GiftBoxScene = memo(function GiftBoxScene({
         z: isMobileViewport ? 1.02 : 1.05,
         duration: 1.1,
         ease: 'power3.inOut',
+        overwrite: 'auto',
       });
       if (boxGroupRef.current) {
         gsap.to(boxGroupRef.current.rotation, {
@@ -681,6 +721,7 @@ export const GiftBoxScene = memo(function GiftBoxScene({
           z: 0,
           duration: 1.1,
           ease: 'power3.inOut',
+          overwrite: 'auto',
         });
       }
     } else if (isReadingBackgroundPhase && groupRef.current) {
@@ -696,6 +737,7 @@ export const GiftBoxScene = memo(function GiftBoxScene({
         z: isMobileViewport ? -1.95 : -1.45,
         duration: 1.55,
         ease: 'power3.inOut',
+        overwrite: 'auto',
       });
       gsap.to(groupRef.current.scale, {
         x: isMobileViewport ? 0.19 : 0.25,
@@ -703,6 +745,7 @@ export const GiftBoxScene = memo(function GiftBoxScene({
         z: isMobileViewport ? 0.19 : 0.25,
         duration: 1.55,
         ease: 'power3.inOut',
+        overwrite: 'auto',
       });
       if (boxGroupRef.current) {
         gsap.to(boxGroupRef.current.rotation, {
@@ -717,6 +760,7 @@ export const GiftBoxScene = memo(function GiftBoxScene({
           z: shouldAnchorReadingBoxLeft ? 0.06 : -0.06,
           duration: 1.4,
           ease: 'power3.inOut',
+          overwrite: 'auto',
         });
       }
     } else if (shouldMoveBoxToCorner && groupRef.current) {
@@ -725,14 +769,16 @@ export const GiftBoxScene = memo(function GiftBoxScene({
         y: isMobileViewport ? 2.5 : 1.9,
         z: isMobileViewport ? -1.7 : -0.45,
         duration: 1.6,
-        ease: 'power3.inOut'
+        ease: 'power3.inOut',
+        overwrite: 'auto',
       });
       gsap.to(groupRef.current.scale, {
         x: isMobileViewport ? 0.28 : 0.38,
         y: isMobileViewport ? 0.28 : 0.38,
         z: isMobileViewport ? 0.28 : 0.38,
         duration: 1.6,
-        ease: 'power3.inOut'
+        ease: 'power3.inOut',
+        overwrite: 'auto',
       });
       if (boxGroupRef.current) {
         gsap.to(boxGroupRef.current.rotation, {
@@ -741,6 +787,7 @@ export const GiftBoxScene = memo(function GiftBoxScene({
           z: isMobileViewport ? -0.24 : -0.16,
           duration: 1.45,
           ease: 'power3.inOut',
+          overwrite: 'auto',
         });
       }
     } else if (step === 'closing-gift' && groupRef.current) {
@@ -750,6 +797,7 @@ export const GiftBoxScene = memo(function GiftBoxScene({
         z: 0,
         duration: 2.2,
         ease: 'power3.inOut',
+        overwrite: 'auto',
       });
       gsap.to(groupRef.current.scale, {
         x: isMobileViewport ? 0.34 : 0.42,
@@ -757,6 +805,7 @@ export const GiftBoxScene = memo(function GiftBoxScene({
         z: isMobileViewport ? 0.34 : 0.42,
         duration: 2.2,
         ease: 'power3.inOut',
+        overwrite: 'auto',
       });
       if (boxGroupRef.current) {
         gsap.to(boxGroupRef.current.rotation, {
@@ -765,11 +814,12 @@ export const GiftBoxScene = memo(function GiftBoxScene({
           z: isMobileViewport ? -0.02 : -0.04,
           duration: 2.1,
           ease: 'power3.inOut',
+          overwrite: 'auto',
         });
       }
     } else if ((isTextStep || step === 'ready' || step === 'cosmic-core' || step === 'timeline-expand') && groupRef.current) {
-      gsap.to(groupRef.current.position, { x: 0, y: 0, z: 0, duration: 1.5 });
-      gsap.to(groupRef.current.scale, { x: 1, y: 1, z: 1, duration: 1.5 });
+      gsap.to(groupRef.current.position, { x: 0, y: 0, z: 0, duration: 1.5, overwrite: 'auto' });
+      gsap.to(groupRef.current.scale, { x: 1, y: 1, z: 1, duration: 1.5, overwrite: 'auto' });
       if (boxGroupRef.current) {
         gsap.to(boxGroupRef.current.rotation, {
           x: 0,
@@ -777,6 +827,7 @@ export const GiftBoxScene = memo(function GiftBoxScene({
           z: 0,
           duration: 1.5,
           ease: 'power2.out',
+          overwrite: 'auto',
         });
       }
     }
@@ -788,22 +839,25 @@ export const GiftBoxScene = memo(function GiftBoxScene({
         y: isMobileViewport ? 2.75 : 2.15,
         z: isMobileViewport ? -3.4 : -2.3,
         duration: 1.5,
-        ease: 'power3.inOut'
+        ease: 'power3.inOut',
+        overwrite: 'auto',
       });
       gsap.to(timelineGroupRef.current.scale, {
         x: isMobileViewport ? 0.34 : 0.5,
         y: isMobileViewport ? 0.34 : 0.5,
         z: isMobileViewport ? 0.34 : 0.5,
         duration: 1.5,
-        ease: 'power3.inOut'
+        ease: 'power3.inOut',
+        overwrite: 'auto',
       });
     } else if (!isTextStep && timelineGroupRef.current) {
-      gsap.to(timelineGroupRef.current.position, { x: 0, y: 0, z: 0, duration: 1.5 });
+      gsap.to(timelineGroupRef.current.position, { x: 0, y: 0, z: 0, duration: 1.5, overwrite: 'auto' });
       gsap.to(timelineGroupRef.current.scale, {
         x: 1,
         y: 1,
         z: 1,
         duration: 1.5,
+        overwrite: 'auto',
       });
     }
     if (isReadingBackgroundPhase && lidGroupRef.current) {
@@ -811,14 +865,21 @@ export const GiftBoxScene = memo(function GiftBoxScene({
         x: -Math.PI * 0.78,
         duration: 1.25,
         ease: 'power3.out',
+        overwrite: 'auto',
       });
       gsap.to(lidGroupRef.current.position, {
         y: 1.28,
         z: -0.44,
         duration: 1.25,
         ease: 'power3.out',
+        overwrite: 'auto',
       });
     }
+    }, groupRef);
+
+    return () => {
+      ctx.revert();
+    };
   }, [camera.position, camera.rotation, isMobileViewport, isReadingBackgroundPhase, leftAnchorReadingSteps, step, storyGiftOpening]);
 
   const isTimelineActive = isCosmicPhase || isTimelinePhase;
@@ -832,9 +893,9 @@ export const GiftBoxScene = memo(function GiftBoxScene({
       <fog attach="fog" args={['#05050A', 5, isReadingBackgroundPhase ? 19 : 25]} />
       
       {/* Layered Starry Sky - More subtle */}
-      <Stars radius={90} depth={42} count={isReadingBackgroundPhase ? 40 : showSecondaryStars ? 180 : 96} factor={1.2} saturation={0} fade speed={isReadingBackgroundPhase ? 0 : 0.04} />
+      <Stars radius={90} depth={42} count={isReadingBackgroundPhase ? 28 : isMobileViewport ? (showSecondaryStars ? 96 : 52) : showSecondaryStars ? 180 : 96} factor={1.2} saturation={0} fade speed={isReadingBackgroundPhase ? 0 : 0.04} />
       {showSecondaryStars && (
-        <Stars radius={130} depth={42} count={34} factor={1.55} saturation={0.12} fade speed={0.08} />
+        <Stars radius={130} depth={42} count={isMobileViewport ? 18 : 34} factor={1.55} saturation={0.12} fade speed={0.08} />
       )}
       
       {/* Nebula Glow Effect - Deeper and more subtle */}
@@ -849,7 +910,7 @@ export const GiftBoxScene = memo(function GiftBoxScene({
       
       {/* Gentle floating light particles */}
       {showAmbientSparkles && (
-        <Sparkles count={isTimelinePhase ? 4 : 3} scale={7.5} size={0.58} speed={0.06} opacity={0.1} color="#D8C4A8" />
+        <Sparkles count={isMobileViewport ? (isTimelinePhase ? 2 : 1) : isTimelinePhase ? 4 : 3} scale={7.5} size={0.58} speed={0.06} opacity={0.1} color="#D8C4A8" />
       )}
       
       <Float
