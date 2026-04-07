@@ -120,7 +120,19 @@ type NavigatorConnection = {
   effectiveType?: string;
 };
 
+function shouldForceFullExperienceOnMobile() {
+  const hasCoarsePointer = window.matchMedia?.('(pointer: coarse)').matches === true;
+  const isTouchDevice = navigator.maxTouchPoints > 0;
+  const isMobileUserAgent = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+
+  return hasCoarsePointer || (isTouchDevice && isMobileUserAgent);
+}
+
 function getPreferredExperienceMode(): ExperienceMode {
+  if (shouldForceFullExperienceOnMobile()) {
+    return 'full';
+  }
+
   const connection = (
     navigator as Navigator & {
       connection?: NavigatorConnection;
